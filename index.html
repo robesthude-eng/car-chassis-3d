@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#07090e" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Интерактивный 3D-стенд шасси Volkswagen Scirocco PQ35: подвеска, рулевое управление, привод и порядок сборки."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>
+      3D Шасси VW Scirocco (PQ35) — Макферсон, Подрамник, Рейка, Цапфы
+    </title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="boot-screen" role="status" aria-live="polite" aria-busy="true">
+      <div class="boot-logo">VW SCIROCCO · PQ35</div>
+      <div class="boot-sub">3D стенд шасси</div>
+      <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+      <div class="boot-step" id="boot-step">Инициализация…</div>
+      <div class="boot-hint">
+        Геометрия и текстуры считаются на устройстве — без загрузки из сети
+      </div>
+      <button type="button" class="act-btn" id="boot-retry" hidden>
+        Повторить запуск
+      </button>
+    </div>
+
+    <main
+      id="canvas-container"
+      aria-label="Интерактивная 3D-модель шасси Volkswagen Scirocco"
+    ></main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Top Bar HUD -->
+    <header class="hud top-bar">
+      <div class="brand">
+        <div class="brand-logo">VW</div>
+        <div class="brand-title">SCIROCCO PQ35</div>
+      </div>
+
+      <div class="header-actions">
+        <div class="badge">
+          <span id="hud-speed">0 км/ч</span>
+        </div>
+        <div class="badge">
+          <span id="hud-rpm">0 RPM</span>
+        </div>
+        <div class="badge badge-attitude" title="Крен / клевок кузова">
+          <span id="hud-attitude">+0.0° / +0.0°</span>
+        </div>
+        <button
+          type="button"
+          class="btn-icon"
+          id="btn-toggle-telemetry"
+          title="Телеметрия и привод"
+          aria-label="Показать телеметрию"
+          aria-controls="telemetry-panel"
+          aria-expanded="false"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M18 20V10M12 20V4M6 20v-6" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="btn-icon"
+          id="btn-sound"
+          title="Звук"
+          aria-label="Включить звук"
+          aria-pressed="false"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path
+              d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.08"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="btn-icon"
+          id="btn-specs"
+          title="Характеристики"
+          aria-label="Открыть характеристики"
+          aria-controls="specs-modal"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Left Telemetry & Mechanical Chain Panel -->
+    <aside
+      class="hud telemetry-panel hidden"
+      id="telemetry-panel"
+      aria-label="Телеметрия шасси"
+      aria-hidden="true"
+    >
+      <div class="panel-title">
+        <span>Ход Подвески</span>
+        <span class="panel-accent">4-Corner</span>
+      </div>
+
+      <div class="susp-grid">
+        <div class="susp-corner">
+          <div class="susp-tag">ПЕР ЛЕВ (FL)</div>
+          <div class="susp-val" id="travel-fl">0 мм</div>
+          <div class="susp-travel-bar">
+            <div class="susp-travel-fill" id="bar-fl"></div>
+          </div>
+        </div>
+        <div class="susp-corner">
+          <div class="susp-tag">ПЕР ПРАВ (FR)</div>
+          <div class="susp-val" id="travel-fr">0 мм</div>
+          <div class="susp-travel-bar">
+            <div class="susp-travel-fill" id="bar-fr"></div>
+          </div>
+        </div>
+        <div class="susp-corner">
+          <div class="susp-tag">ЗАД ЛЕВ (RL)</div>
+          <div class="susp-val" id="travel-rl">0 мм</div>
+          <div class="susp-travel-bar">
+            <div class="susp-travel-fill" id="bar-rl"></div>
+          </div>
+        </div>
+        <div class="susp-corner">
+          <div class="susp-tag">ЗАД ПРАВ (RR)</div>
+          <div class="susp-val" id="travel-rr">0 мм</div>
+          <div class="susp-travel-bar">
+            <div class="susp-travel-fill" id="bar-rr"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="attitude-row" aria-label="Положение кузова">
+        <span>Крен <b id="hud-roll">+0.0°</b></span>
+        <span>Клевок <b id="hud-pitch">+0.0°</b></span>
+        <span>Аккерман <b id="hud-ackermann">+0.00°</b></span>
+      </div>
+
+      <div class="panel-title">
+        <span>Узлы VW Scirocco (PQ35)</span>
+      </div>
+
+      <div class="chain-list">
+        <div class="chain-item">
+          <span class="chain-name">Подрамник (1K0199369):</span>
+          <span class="chain-status ok" id="status-subframe"
+            >4x M14 ЗАТЯНУТЫ</span
+          >
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Задние консоли рычагов:</span>
+          <span class="chain-status ok" id="status-consoles">1K0199231 OK</span>
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Шаровые (1K0407365):</span>
+          <span class="chain-status ok" id="status-balljoints">3 БОЛТА OK</span>
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Стойки 55mm (1K0413031):</span>
+          <span class="chain-status ok" id="status-struts">КЛАМП M14 OK</span>
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Ступичный узел (1T0498621):</span>
+          <span class="chain-status ok" id="status-knuckles"
+            >5x112 ПОДШИПНИК</span
+          >
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Рейка и тяги (1K1423055):</span>
+          <span class="chain-status ok" id="status-steering"
+            >ТЯГИ & НАКОНЕЧНИКИ</span
+          >
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Приводные валы (FWD):</span>
+          <span class="chain-status ok" id="status-driveshafts"
+            >ШРУС & СТУПИЦА OK</span
+          >
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Задняя многорычажка:</span>
+          <span class="chain-status ok" id="status-rearlinks"
+            >4 РЫЧАГА + ТЯГА</span
+          >
+        </div>
+        <div class="chain-item">
+          <span class="chain-name">Последняя затяжка:</span>
+          <span class="chain-status ok" id="status-torque">—</span>
+        </div>
+      </div>
+
+      <div class="panel-actions">
+        <button type="button" class="act-btn report-btn" id="btn-export-report">
+          <span aria-hidden="true">⇩</span> Скачать диагностический отчёт
+        </button>
+      </div>
+    </aside>
+
+    <!-- Right Toolbar -->
+    <nav class="hud right-toolbar" aria-label="Ракурсы и режимы отображения">
+      <button
+        type="button"
+        class="tool-btn active"
+        data-view="orbit"
+        title="Общий вид"
+        aria-label="Общий вид"
+        aria-pressed="true"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+          <path d="M2 12h20" />
+        </svg>
+        <span class="tooltip">Общий вид</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        data-view="front"
+        title="Стойка Макферсон 55 мм"
+        aria-label="Показать стойку Макферсон"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="12" y1="3" x2="12" y2="21" />
+        </svg>
+        <span class="tooltip">Стойка Макферсон 55мм</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        data-view="controlarm"
+        title="L-рычаг и трёхболтовая шаровая"
+        aria-label="Показать рычаг и шаровую"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <polygon points="3 6 9 18 21 18 15 6 3 6" />
+        </svg>
+        <span class="tooltip">L-рычаг, консоль и шаровая</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        data-view="steering"
+        title="Рейка PQ35 и тяги"
+        aria-label="Показать рулевую рейку"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M2 12h20M7 8l-5 4 5 4M17 8l5 4-5 4" />
+        </svg>
+        <span class="tooltip">Рейка PQ35 и тяги</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        data-view="knuckle"
+        title="Цапфа и ступица 5x112"
+        aria-label="Показать цапфу и ступицу"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <span class="tooltip">Цапфа, подшипник, диск</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        data-view="subframe"
+        title="Подрамник PQ35"
+        aria-label="Показать подрамник"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+        </svg>
+        <span class="tooltip">Подрамник Scirocco</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        data-view="rearaxle"
+        title="Задняя многорычажка PQ35"
+        aria-label="Показать заднюю подвеску"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M4 17l6-5 4 3 6-7" />
+          <circle cx="4" cy="17" r="1.7" />
+          <circle cx="20" cy="8" r="1.7" />
+        </svg>
+        <span class="tooltip">Задняя многорычажка</span>
+      </button>
+      <div class="toolbar-divider" aria-hidden="true"></div>
+      <button
+        type="button"
+        class="tool-btn"
+        id="btn-labels"
+        title="3D-метки"
+        aria-label="Показать 3D-метки"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+        <span class="tooltip">3D Метки</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        id="btn-xray"
+        title="Рентген рамы"
+        aria-label="Включить рентген рамы"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <span class="tooltip">Рентген (X-Ray)</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        id="btn-diff-cutaway"
+        title="Разрез редуктора"
+        aria-label="Включить разрез редуктора"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+          />
+        </svg>
+        <span class="tooltip">Разрез редуктора</span>
+      </button>
+      <button
+        type="button"
+        class="tool-btn"
+        id="btn-colorcode"
+        title="Цветовые зоны"
+        aria-label="Включить цветовые зоны"
+        aria-pressed="false"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+        </svg>
+        <span class="tooltip">Цветовые зоны</span>
+      </button>
+    </nav>
+
+    <!-- Bottom Control Dock -->
+    <footer class="hud bottom-dock" aria-label="Управление стендом">
+      <div class="mode-tabs" role="tablist" aria-label="Режим стенда">
+        <button
+          type="button"
+          class="tab-btn active"
+          id="tab-dyno"
+          data-tab="dyno"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-dyno"
+        >
+          🏎️ Испытания
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          id="tab-wrench"
+          data-tab="wrench"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-wrench"
+        >
+          🔧 Сборка
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          id="tab-rig"
+          data-tab="rig"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-rig"
+        >
+          〰️ Вибростенд
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          id="tab-drag"
+          data-tab="drag"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-drag"
+        >
+          ↕ Клиренс
+        </button>
+      </div>
+
+      <!-- Panel 1: Dyno / Drive Mode -->
+      <div
+        class="control-row mode-panel"
+        id="panel-dyno"
+        role="tabpanel"
+        aria-labelledby="tab-dyno"
+      >
+        <div class="ctrl-group">
+          <label class="ctrl-label" for="slider-speed">Скорость:</label>
+          <div class="slider-box">
+            <input
+              type="range"
+              id="slider-speed"
+              min="0"
+              max="240"
+              step="1"
+              value="0"
+            />
+            <span class="slider-val" id="val-speed">0 км/ч</span>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <label class="ctrl-label" for="slider-steer">Руль:</label>
+          <div class="slider-box">
+            <input
+              type="range"
+              id="slider-steer"
+              min="-35"
+              max="35"
+              step="0.5"
+              value="0"
+            />
+            <span class="slider-val" id="val-steer">0.0°</span>
+          </div>
+        </div>
+
+        <p class="key-hint">
+          W/S — газ и тормоз · A/D — руль · стрелки дублируют
+        </p>
+
+        <div class="ctrl-group">
+          <button type="button" class="act-btn speed-preset" data-val="0">
+            Стоп
+          </button>
+          <button type="button" class="act-btn speed-preset" data-val="60">
+            60
+          </button>
+          <button type="button" class="act-btn speed-preset" data-val="120">
+            120
+          </button>
+          <button type="button" class="act-btn speed-preset" data-val="200">
+            200
+          </button>
+        </div>
+
+        <!-- Mobile Virtual Pedals Bar -->
+        <div class="mobile-touch-bar">
+          <button
+            type="button"
+            class="touch-drive-btn touch-btn-steer"
+            id="touch-steer-left"
+          >
+            ◀ Руль
+          </button>
+          <button
+            type="button"
+            class="touch-drive-btn touch-btn-steer"
+            id="touch-steer-right"
+          >
+            Руль ▶
+          </button>
+          <button
+            type="button"
+            class="touch-drive-btn touch-btn-brake"
+            id="touch-brake"
+          >
+            Тормоз
+          </button>
+          <button
+            type="button"
+            class="touch-drive-btn touch-btn-gas"
+            id="touch-gas"
+          >
+            Газ
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel 2: VW Scirocco OEM Bolt Assembly Constructor Mode -->
+      <div
+        class="control-row mode-panel"
+        id="panel-wrench"
+        role="tabpanel"
+        aria-labelledby="tab-wrench"
+        hidden
+      >
+        <div class="ctrl-group" id="bolt-buttons">
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-subframe"
+            data-bolt="subframe"
+            aria-pressed="true"
+          >
+            1. 🔩 Подрамник
+          </button>
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-arms"
+            data-bolt="arms"
+            aria-pressed="true"
+          >
+            2. 🔩 Консоли и рычаги
+          </button>
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-balljoints"
+            data-bolt="balljoints"
+            aria-pressed="true"
+          >
+            3. 🔩 Шаровые опоры
+          </button>
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-struts"
+            data-bolt="struts"
+            aria-pressed="true"
+          >
+            4. 🔩 Стойки Ø55
+          </button>
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-rearlinks"
+            data-bolt="rearlinks"
+            aria-pressed="true"
+          >
+            5. 🔩 Задние рычаги
+          </button>
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-driveshafts"
+            data-bolt="driveshafts"
+            aria-pressed="true"
+          >
+            6. 🔩 Приводные валы
+          </button>
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-steering"
+            data-bolt="steering"
+            aria-pressed="true"
+          >
+            7. 🔩 Рейка и наконечники
+          </button>
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-bolt-wheels"
+            data-bolt="wheels"
+            aria-pressed="true"
+          >
+            8. 🛞 Колёсные болты
+          </button>
+        </div>
+
+        <div class="ctrl-group">
+          <button
+            type="button"
+            class="act-btn active"
+            id="btn-order-mode"
+            aria-pressed="true"
+          >
+            📋 Порядок: строгий
+          </button>
+          <span class="ctrl-label" id="order-hint">Всё собрано</span>
+          <span class="ctrl-label torque-readout" id="torque-readout"
+            >Момент: —</span
+          >
+        </div>
+
+        <div class="ctrl-group">
+          <button type="button" class="act-btn danger" id="btn-unbolt-all">
+            Разобрать по порядку
+          </button>
+          <button type="button" class="act-btn success" id="btn-bolt-all">
+            Собрать по порядку
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel 3: 4-Post Rig Mode -->
+      <div
+        class="control-row mode-panel"
+        id="panel-rig"
+        role="tabpanel"
+        aria-labelledby="tab-rig"
+        hidden
+      >
+        <div class="ctrl-group">
+          <button
+            type="button"
+            class="act-btn rig-preset active"
+            data-mode="sine"
+            aria-pressed="true"
+          >
+            Синфазный
+          </button>
+          <button
+            type="button"
+            class="act-btn rig-preset"
+            data-mode="diagonal"
+            aria-pressed="false"
+          >
+            Диагональ
+          </button>
+          <button
+            type="button"
+            class="act-btn rig-preset"
+            data-mode="wave"
+            aria-pressed="false"
+          >
+            Волна
+          </button>
+          <button
+            type="button"
+            class="act-btn accent-action"
+            id="btn-impulse-bump"
+          >
+            💥 Удар
+          </button>
+        </div>
+
+        <div class="ctrl-group">
+          <label class="ctrl-label" for="slider-freq">Частота:</label>
+          <div class="slider-box">
+            <input
+              type="range"
+              id="slider-freq"
+              min="0.5"
+              max="6.0"
+              step="0.1"
+              value="2.0"
+            />
+            <span class="slider-val" id="val-freq">2.0 Гц</span>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <label class="ctrl-label" for="slider-amp">Амплитуда:</label>
+          <div class="slider-box">
+            <input
+              type="range"
+              id="slider-amp"
+              min="0"
+              max="80"
+              step="2"
+              value="40"
+            />
+            <span class="slider-val" id="val-amp">40 мм</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 4: Interactive Ride Height & Drag Mode -->
+      <div
+        class="control-row mode-panel"
+        id="panel-drag"
+        role="tabpanel"
+        aria-labelledby="tab-drag"
+        hidden
+      >
+        <div class="ctrl-group">
+          <label class="ctrl-label" for="slider-ride-height"
+            >Клиренс рамы:</label
+          >
+          <div class="slider-box">
+            <input
+              type="range"
+              id="slider-ride-height"
+              min="100"
+              max="260"
+              step="2"
+              value="180"
+            />
+            <span class="slider-val" id="val-ride-height">180 мм</span>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <span class="ctrl-label">FL:</span>
+          <input
+            type="range"
+            class="wheel-manual-slider"
+            data-corner="0"
+            min="-60"
+            max="80"
+            step="1"
+            value="0"
+            aria-label="Ход переднего левого колеса"
+          />
+          <span class="ctrl-label">FR:</span>
+          <input
+            type="range"
+            class="wheel-manual-slider"
+            data-corner="1"
+            min="-60"
+            max="80"
+            step="1"
+            value="0"
+            aria-label="Ход переднего правого колеса"
+          />
+          <span class="ctrl-label">RL:</span>
+          <input
+            type="range"
+            class="wheel-manual-slider"
+            data-corner="2"
+            min="-60"
+            max="80"
+            step="1"
+            value="0"
+            aria-label="Ход заднего левого колеса"
+          />
+          <span class="ctrl-label">RR:</span>
+          <input
+            type="range"
+            class="wheel-manual-slider"
+            data-corner="3"
+            min="-60"
+            max="80"
+            step="1"
+            value="0"
+            aria-label="Ход заднего правого колеса"
+          />
+          <button type="button" class="act-btn" id="btn-reset-drag">
+            Сброс
+          </button>
+        </div>
+      </div>
+    </footer>
+
+    <!-- 3D Pins Container -->
+    <div
+      id="pins-container"
+      class="hud pins-container"
+      aria-hidden="true"
+    ></div>
+
+    <!-- Specs Modal -->
+    <div
+      class="modal-overlay"
+      id="specs-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="specs-title"
+      aria-hidden="true"
+    >
+      <div class="modal-card" tabindex="-1">
+        <div class="modal-header">
+          <h2 class="modal-title" id="specs-title">
+            VW Scirocco (PQ35) — конструкция подвески
+          </h2>
+          <button
+            type="button"
+            class="modal-close"
+            id="modal-close-btn"
+            aria-label="Закрыть характеристики"
+          >
+            &times;
+          </button>
+        </div>
+        <table class="spec-table">
+          <caption>
+            Основные узлы
+          </caption>
+          <tr>
+            <td class="spec-k">Платформа:</td>
+            <td class="spec-v">
+              Volkswagen PQ35 (Scirocco III, Golf Mk6, Passat CC)
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Передняя подвеска:</td>
+            <td class="spec-v">
+              Стойка Макферсон 55 мм + кованый алюминиевый L-рычаг
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Подрамник (Subframe):</td>
+            <td class="spec-v">
+              1K0 199 369 F, крепится 4 болтами M14x1.5x100 мм
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Консоли рычагов:</td>
+            <td class="spec-v">
+              1K0 199 231 / 232 — литые алюминиевые опоры задних
+              гидросайлентблоков
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Шаровые опоры:</td>
+            <td class="spec-v">
+              1K0 407 365 / 366 — крепление к рычагу на 3 болтах M10
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Цапфа (Поворотный кулак):</td>
+            <td class="spec-v">
+              1K0 407 255 / 256 — верхний зажим 55 мм под стойку + 4-болтовый
+              ступичный узел
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Ступичный подшипник:</td>
+            <td class="spec-v">
+              1T0 498 621 — двухрядный радиально-упорный, 5x112 мм
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Рулевая рейка:</td>
+            <td class="spec-v">
+              1K1 423 055 — электромеханическая, 4 болта крепления к подрамнику
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Стойки стабилизатора:</td>
+            <td class="spec-v">
+              1K0 411 315 — тяги («косточки») от штанги стабилизатора к
+              кронштейну стойки
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Привод:</td>
+            <td class="spec-v">
+              Передний (FWD) — поперечная КПП со встроенным редуктором, главная
+              пара 3.73, два вала со ШРУСами на передние ступицы
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Приводные валы:</td>
+            <td class="spec-v">
+              Левый короткий, правый длинный с промежуточной опорой; внутренний
+              трипоид + наружный шариковый ШРУС
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Задняя подвеска:</td>
+            <td class="spec-v">
+              Многорычажка PQ35: продольный рычаг + верхний и нижний поперечные
+              + развальный рычаг + тяга подруливания. Пружина стоит на нижнем
+              рычаге отдельно от амортизатора
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">Задний ступичный узел:</td>
+            <td class="spec-v">
+              Задний подшипник 5x112 (1T0 598 611 и аналоги — сверять по году и
+              комплектации)
+            </td>
+          </tr>
+        </table>
+
+        <h3 class="modal-subtitle">Моменты затяжки и порядок сборки</h3>
+        <table class="spec-table">
+          <caption>
+            Последовательность работ
+          </caption>
+          <tr>
+            <td class="spec-k">1. Подрамник → кузов:</td>
+            <td class="spec-v">
+              4x M14x1.5x100 (10.9) — 110 Н·м + 90°, болты одноразовые, от
+              центра к краям
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">2. Консоли и рычаги:</td>
+            <td class="spec-v">
+              Консоль 1K0199231 — 2x M10 = 40 Н·м + 90°; передний сайлентблок
+              M12 = 70 Н·м + 90°; задний хвостовик M12 = 70 Н·м + 90° (тянуть
+              под нагрузкой)
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">3. Шаровая 1K0407365:</td>
+            <td class="spec-v">
+              3x M10 = 40 Н·м + 90°, болты не переиспользовать
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">4. Стойка 1K0413031:</td>
+            <td class="spec-v">
+              Клеммный болт цапфы M14x1.5 = 60 Н·м + 90°; верхняя опора к
+              стакану = 60 Н·м; шток-гайка = 60 Н·м
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">5. Задняя многорычажка:</td>
+            <td class="spec-v">
+              Рычаги → подрамник M12 = 70 Н·м + 90°; продольный рычаг → кузов
+              M12 = 70 Н·м + 90°; тяга подруливания = 70 Н·м + 90° (тянуть под
+              нагрузкой, затем сход)
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">6. Приводные валы:</td>
+            <td class="spec-v">
+              Внутренний фланец → КПП 6x M8 = 40 Н·м; ступичный болт M16x1.5 =
+              200 Н·м + 180° (одноразовый)
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">7. Наконечники рейки:</td>
+            <td class="spec-v">
+              Конус в сошку цапфы = 20 Н·м + 90°; рейка → подрамник 4x M10 = 50
+              Н·м; после сборки — сход-развал
+            </td>
+          </tr>
+          <tr>
+            <td class="spec-k">8. Колёсные болты:</td>
+            <td class="spec-v">
+              5x M14x1.5 = 120 Н·м, крест-накрест, без ударного гайковёрта
+            </td>
+          </tr>
+        </table>
+        <p class="spec-note">
+          Значения справочные, для учебного стенда. Перед реальной работой
+          сверяйте моменты, углы доворота и артикулы с ELSA/ETKA по своему году
+          и комплектации: у PQ35 они отличаются между 2WD и 4Motion, до и после
+          рестайлинга.
+        </p>
+      </div>
+    </div>
+
+    <noscript>Для работы 3D-стенда необходимо включить JavaScript.</noscript>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>

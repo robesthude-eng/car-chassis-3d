@@ -1,0 +1,53 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  CHASSIS_GEOMETRY,
+  rearBodyWorldPoint,
+  rearSubframeWorldPoint,
+} from "../src/data/chassisGeometry.js";
+
+function assertPoint(actual, expected) {
+  for (const axis of ["x", "y", "z"]) {
+    assert.ok(
+      Math.abs(actual[axis] - expected[axis]) < 1e-12,
+      `${axis}: expected ${expected[axis]}, received ${actual[axis]}`,
+    );
+  }
+}
+
+test("every rear suspension link has a finite subframe hardpoint", () => {
+  const names = ["upperArm", "springLink", "camberLink", "toeLink"];
+  assert.deepEqual(
+    Object.keys(CHASSIS_GEOMETRY.rearSubframe.hardpoints),
+    names,
+  );
+
+  for (const name of names) {
+    for (const sign of [-1, 1]) {
+      const hardpoint = rearSubframeWorldPoint(name, sign);
+      assert.ok(Object.values(hardpoint).every(Number.isFinite));
+      assert.equal(
+        Math.sign(hardpoint.x),
+        sign,
+        `${name} must mirror across the vehicle centerline`,
+      );
+    }
+  }
+});
+
+test("rear body mounts align with the visible spring and damper towers", () => {
+  const leftSpring = rearBodyWorldPoint("springTop", -1);
+  const rightSpring = rearBodyWorldPoint("springTop", 1);
+  const rightDamper = rearBodyWorldPoint("damperTop", 1);
+  const rightTrailing = rearBodyWorldPoint("trailingArm", 1);
+
+  assertPoint(leftSpring, { x: -0.48, y: 0.6, z: 1.315 });
+  assertPoint(rightSpring, { x: 0.48, y: 0.6, z: 1.315 });
+  assertPoint(rightDamper, { x: 0.63, y: 0.78, z: 1.41 });
+  assertPoint(rightTrailing, { x: 0.6, y: 0.3, z: 0.76 });
+});
+
+test("unknown suspension hardpoints fail loudly", () => {
+  assert.throws(() => rearSubframeWorldPoint("missing", 1), RangeError);
+  assert.throws(() => rearBodyWorldPoint("missing", -1), RangeError);
+});

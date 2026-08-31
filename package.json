@@ -1,0 +1,27 @@
+{
+  "name": "scirocco-chassis-3d",
+  "version": "2.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:standalone": "node scripts/build-standalone.mjs",
+    "preview": "vite preview",
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --write . --ignore-path .gitignore",
+    "format:check": "prettier --check . --ignore-path .gitignore",
+    "check": "node scripts/check-project.mjs && eslint . && node --test && prettier --check . --ignore-path .gitignore && vite build && node scripts/build-standalone.mjs"
+  },
+  "dependencies": {
+    "three": "0.185.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "globals": "^16.5.0",
+    "prettier": "^3.9.6",
+    "vite": "^7.0.0"
+  }
+}
