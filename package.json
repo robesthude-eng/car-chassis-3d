@@ -15,9 +15,13 @@
     "check": "node scripts/check-project.mjs && eslint . && node --test && prettier --check . --ignore-path .gitignore && vite build && node scripts/build-standalone.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/core": "^6.2.2",
+    "@dimforge/rapier3d-compat": "^0.14.0",
     "three": "0.185.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.2.2",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.9.1",
     "globals": "^16.5.0",

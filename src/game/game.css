@@ -1,0 +1,171 @@
+:root {
+  --bg: #0b0e14;
+  --panel: rgba(12, 16, 24, 0.72);
+  --line: rgba(255, 255, 255, 0.12);
+  --text: #e8ecf4;
+  --dim: #96a0b3;
+  --accent: #4ad0a0;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#scene { display: block; width: 100vw; height: 100vh; touch-action: none; }
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--dim);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  z-index: 50;
+}
+
+.hud {
+  position: fixed;
+  z-index: 10;
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 13px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.hud-tl { left: 12px; top: calc(58px + var(--safe-t)); min-width: 148px; }
+.hud-tr { right: 12px; top: calc(58px + var(--safe-t)); min-width: 168px; }
+.hud-bl { left: 12px; bottom: calc(14px + var(--safe-b)); min-width: 190px; }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: var(--dim);
+}
+.row b { font-weight: 500; color: var(--dim); }
+.row span { color: var(--text); font-weight: 600; }
+
+.speedo { display: flex; align-items: baseline; gap: 6px; }
+.speedo #hud-speed { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+.speedo small { font-size: 11px; color: var(--dim); }
+.speedo .gear {
+  margin-left: auto;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(74, 208, 160, 0.12);
+  border-radius: 8px;
+  padding: 1px 10px;
+}
+
+.rpm {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin: 7px 0 4px;
+}
+.rpm-bar { height: 100%; width: 8%; background: var(--accent); transition: width 0.07s linear; }
+
+.topbar {
+  position: fixed;
+  top: calc(10px + var(--safe-t));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+
+.chip {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text);
+  border-radius: 11px;
+  padding: 0 14px;
+  height: 40px;
+  min-width: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.chip:active { transform: scale(0.96); }
+.chip.is-active { border-color: var(--accent); color: var(--accent); }
+
+#touch-controls {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 15;
+  display: none;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 16px calc(18px + var(--safe-b));
+  pointer-events: none;
+}
+
+.pad { display: flex; gap: 12px; align-items: flex-end; pointer-events: auto; }
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(18, 24, 34, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text);
+  font-weight: 700;
+  border-radius: 50%;
+  width: 76px;
+  height: 76px;
+  font-size: 15px;
+  touch-action: none;
+  cursor: pointer;
+  transition: transform 0.06s, background 0.1s;
+}
+.btn.small { width: 56px; height: 56px; font-size: 14px; }
+.btn.gas { background: rgba(74, 208, 160, 0.24); border-color: rgba(74, 208, 160, 0.6); }
+.btn.brake { background: rgba(255, 91, 78, 0.22); border-color: rgba(255, 91, 78, 0.55); }
+.btn.steer { font-size: 22px; }
+.btn.is-pressed { transform: scale(0.9); background: rgba(255, 255, 255, 0.22); }
+
+/* Тач-панель только на сенсорных устройствах и в узких окнах */
+@media (pointer: coarse), (max-width: 900px) {
+  #touch-controls { display: flex; }
+  .hud-bl { display: none; }
+  .speedo #hud-speed { font-size: 34px; }
+}
+
+@media (max-height: 460px) {
+  .hud-tl, .hud-tr { top: calc(54px + var(--safe-t)); padding: 7px 10px; }
+  .btn { width: 64px; height: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .chip { transition: none; }
+}

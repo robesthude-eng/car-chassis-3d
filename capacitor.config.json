@@ -1,0 +1,11 @@
+{
+  "appId": "com.robesthude.sciroccoracing",
+  "appName": "Scirocco Racing",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false,
+    "backgroundColor": "#0b0e14"
+  },
+  "server": { "androidScheme": "https" }
+}

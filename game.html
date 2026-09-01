@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<meta name="theme-color" content="#0b0e14" />
+<title>Scirocco Chassis Racing</title>
+<link rel="stylesheet" href="/src/game/game.css" />
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="loading">Загрузка трассы…</div>
+
+<div class="hud hud-tl">
+  <div class="speedo">
+    <span id="hud-speed">0</span><small>км/ч</small>
+    <div class="gear" id="hud-gear">N</div>
+  </div>
+  <div class="rpm"><div class="rpm-bar" id="hud-rpm-bar"></div></div>
+  <div class="row"><span id="hud-rpm">850</span> об/мин</div>
+</div>
+
+<div class="hud hud-tr">
+  <div class="row"><b>Круг</b><span id="hud-lap">1 / 3</span></div>
+  <div class="row"><b>Время</b><span id="hud-lap-time">00:00.000</span></div>
+  <div class="row"><b>Лучший</b><span id="hud-best">--:--.---</span></div>
+  <div class="row"><b>Прошлый</b><span id="hud-last">--:--.---</span></div>
+</div>
+
+<div class="hud hud-bl">
+  <div class="row"><b>Перегрузка</b><span id="hud-gforce">0.00g / 0.00g</span></div>
+  <div class="row"><b>Сцепление</b><span id="hud-grip">0%</span></div>
+  <div class="row"><b>Покрытие</b><span id="hud-surface">Асфальт</span></div>
+  <div class="row"><b>Ассистенты</b><span id="hud-assist">ABS·TCS вкл</span></div>
+</div>
+
+<div class="topbar">
+  <button id="btn-camera" class="chip">Погоня</button>
+  <button id="btn-assist" class="chip is-active">ABS·TCS</button>
+  <button id="btn-tilt" class="chip">Гироскоп</button>
+  <button id="btn-reset" class="chip">Сброс</button>
+</div>
+
+<div id="touch-controls">
+  <div class="pad pad-left">
+    <button class="btn steer" data-control="steerLeft" aria-label="Влево">◀</button>
+    <button class="btn steer" data-control="steerRight" aria-label="Вправо">▶</button>
+  </div>
+  <div class="pad pad-right">
+    <button class="btn small" data-control="handbrake" aria-label="Ручник">P</button>
+    <button class="btn brake" data-control="brake" aria-label="Тормоз">BRK</button>
+    <button class="btn gas" data-control="throttle" aria-label="Газ">GAS</button>
+  </div>
+</div>
+
+<script type="module" src="/src/game/main.js"></script>
+</body>
+</html>
