@@ -4,7 +4,7 @@ export default defineConfig({
   base: "./",
   server: {
     host: "0.0.0.0",
-    allowedHosts: ["terminal.local"],
+    allowedHosts: true,
   },
   build: {
     // Three.js is intentionally isolated in a cacheable vendor chunk.
