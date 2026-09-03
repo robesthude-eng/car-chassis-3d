@@ -1,5 +1,5 @@
 export const GEAR_RATIO = 3.73;
-export const TIRE_RADIUS = 0.32;
+export const TIRE_RADIUS = 0.3186;
 export const CG_Y = 0.52;
 export const CG_Z = -0.318;
 export const STATIC_WC_Y = 0.32;

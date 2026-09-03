@@ -351,19 +351,18 @@ export async function buildVehicle(ctx) {
         rearDamperTop.y - 0.32,
         CHASSIS.rearAxleZ + rearDamperTop.z,
       );
-      /* Ноги стакана уходят внутрь кузова и обе встают на косынку
-       арки (x = 0.528), а не отвесно вниз вдоль амортизатора.
-       Раньше три ноги шли по его же оси до y ≈ 0.12, а наружная (x = 0.685)
-       вообще задевала внутреннюю боковину шины: на экране это читалось
-       как «три трубы», внутри которых где-то спрятан сам амортизатор. */
-      const rearTrussGeo = new THREE.CylinderGeometry(0.015, 0.023, 0.34, 10);
-      [0.085, -0.085].forEach((legZ) => {
-        const rLeg = new THREE.Mesh(rearTrussGeo, materials.subframeAluminum);
-        rLeg.position.set(-sign * 0.055, 0.17, legZ);
-        rLeg.rotation.z = -sign * 0.28;
-        rLeg.castShadow = true;
-        towerRearGroup.add(rLeg);
-      });
+      /* Стакан держит один штампованный подкос от поднятого над осью
+       лонжерона (кик-ап выше по коду). Раньше здесь стояли две тонкие
+       трубы по бокам амортизатора — на экране они читались как
+       «два лишних амортизатора». */
+      addBoxBeam(
+        towerRearGroup,
+        V3(-sign * 0.16, 0.085, -0.05),
+        V3(-sign * 0.075, 0.26, -0.03),
+        0.05,
+        0.1,
+        materials.frame,
+      );
 
       /* Третьей ноги у стакана нет сознательно: вниз его держит уже
        существующая косынка задней арки (rearArchGusset ниже). Раньше
@@ -1479,7 +1478,7 @@ export async function buildVehicle(ctx) {
       return { mesh: m, base: len };
     }
 
-    const trailingArm = boxRod(0.052, 0.42, 0.095, materials.rearLinkAluminum);
+    const trailingArm = boxRod(0.042, 0.42, 0.07, materials.rearLinkAluminum);
     const upperArm = rodMesh(0.019, 0.34, materials.rearLinkAluminum);
     const springLink = boxRod(0.05, 0.4, 0.072, materials.rearLinkAluminum);
     const camberLink = rodMesh(0.014, 0.36, materials.rearLinkAluminum);
@@ -1860,23 +1859,36 @@ export async function buildVehicle(ctx) {
         lugNutMeshes.push(stud);
       }
 
-      /* Вентилируемый диск 340×30 мм */
-      const discGeo = new THREE.CylinderGeometry(0.17, 0.17, 0.03, SEG(64, 36));
+      /* Тормозной диск: перед 345x30, зад 310x22, вентилируемый.
+       Две рабочие пластины, между ними тёмный вентиляционный зазор
+       и 24 ребра — с торца диск читается как настоящий вентилируемый. */
+      const isRearAxle = sc.cfg.z > 0;
+      const discR = isRearAxle ? 0.155 : 0.1725;
+      const discT = isRearAxle ? 0.022 : 0.03;
+      const plateT = (discT - 0.008) / 2;
       const discMat = materials.brakeDisc.clone();
       discMat.emissive = new THREE.Color(0x000000);
       discMat.emissiveIntensity = 0;
-      const discMesh = new THREE.Mesh(discGeo, discMat);
-      discMesh.rotation.z = Math.PI / 2;
-      discMesh.castShadow = true;
-      discMesh.receiveShadow = true;
-      hubAndDiscGroup.add(discMesh);
+      let discMesh = null;
+      [-1, 1].forEach((sideX) => {
+        const plate = new THREE.Mesh(
+          new THREE.CylinderGeometry(discR, discR, plateT, SEG(64, 36)),
+          discMat,
+        );
+        plate.rotation.z = Math.PI / 2;
+        plate.position.x = sideX * (discT / 2 - plateT / 2);
+        plate.castShadow = true;
+        plate.receiveShadow = true;
+        hubAndDiscGroup.add(plate);
+        if (sideX === 1) discMesh = plate;
+      });
 
       /* Тёмный поясок вентиляционного зазора между рабочими поверхностями */
       const ventEdge = new THREE.Mesh(
         new THREE.CylinderGeometry(
-          0.1706,
-          0.1706,
-          0.0095,
+          discR + 0.0004,
+          discR + 0.0004,
+          discT - plateT * 2,
           SEG(64, 36),
           1,
           true,
@@ -1885,6 +1897,26 @@ export async function buildVehicle(ctx) {
       );
       ventEdge.rotation.z = Math.PI / 2;
       hubAndDiscGroup.add(ventEdge);
+
+      /* Вентиляционные рёбра между пластинами */
+      const vaneR0 = 0.085;
+      const vaneLen = discR - vaneR0 - 0.004;
+      const vaneGeo = new THREE.BoxGeometry(
+        discT - plateT * 2 - 0.001,
+        vaneLen,
+        0.004,
+      );
+      for (let v = 0; v < 24; v++) {
+        const va = (v / 24) * Math.PI * 2;
+        const vane = new THREE.Mesh(vaneGeo, materials.rimInner);
+        vane.position.set(
+          0,
+          Math.sin(va) * (vaneR0 + vaneLen / 2),
+          Math.cos(va) * (vaneR0 + vaneLen / 2),
+        );
+        vane.rotation.x = Math.PI / 2 - va;
+        hubAndDiscGroup.add(vane);
+      }
 
       /* Ступичная шляпка диска */
       const discHat = new THREE.Mesh(
@@ -1896,7 +1928,7 @@ export async function buildVehicle(ctx) {
       hubAndDiscGroup.add(discHat);
 
       const caliperGroup = new THREE.Group();
-      caliperGroup.position.set(0, 0.115, -0.088);
+      caliperGroup.position.set(0, 0.115 * (discR / 0.1725), -0.088 * (discR / 0.1725));
       caliperGroup.rotation.x = -0.656;
       wheelGroup.add(caliperGroup);
 
@@ -1934,13 +1966,20 @@ export async function buildVehicle(ctx) {
         caliperGroup.add(fin);
       });
 
-      [-0.02, 0.02].forEach((px) => {
-        const pad = new THREE.Mesh(
-          new THREE.BoxGeometry(0.011, 0.046, 0.102),
+      /* Колодки: фрикционная накладка + стальная основа по обе стороны диска */
+      [-1, 1].forEach((sideX) => {
+        const padCore = new THREE.Mesh(
+          new THREE.BoxGeometry(0.008, 0.052, 0.104),
           materials.brakePad,
         );
-        pad.position.set(px, -0.006, 0);
-        caliperGroup.add(pad);
+        padCore.position.set(sideX * (discT / 2 + 0.005), -0.006, 0);
+        caliperGroup.add(padCore);
+        const padBack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.0045, 0.056, 0.108),
+          materials.ballJointSteel,
+        );
+        padBack.position.set(sideX * (discT / 2 + 0.0112), -0.006, 0);
+        caliperGroup.add(padBack);
       });
 
       /* Штуцер тормозного шланга */
@@ -1961,6 +2000,38 @@ export async function buildVehicle(ctx) {
       calBolt2.rotation.y = Math.PI / 2;
       calBolt2.position.set(-0.048, 0, -0.054);
       caliperGroup.add(calBolt2);
+
+      /* Четыре поршня на внутренней половине суппорта */
+      [-0.048, -0.016, 0.016, 0.048].forEach((pz) => {
+        const piston = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.013, 0.013, 0.004, 16),
+          materials.rimInner,
+        );
+        piston.rotation.z = Math.PI / 2;
+        piston.position.set(-0.0515, 0.004, pz);
+        caliperGroup.add(piston);
+      });
+
+      /* Штуцер прокачки и тормозной шланг */
+      const bleeder = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0035, 0.005, 0.022, 10),
+        materials.ballJointSteel,
+      );
+      bleeder.position.set(-0.03, 0.052, 0.044);
+      bleeder.rotation.z = 0.35;
+      caliperGroup.add(bleeder);
+
+      const brakeHose = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0055, 0.0055, 0.11, 10),
+        materials.cvBoots,
+      );
+      brakeHose.position.set(-0.062, 0.075, 0.062);
+      brakeHose.rotation.z = 0.45;
+      brakeHose.rotation.x = -0.3;
+      caliperGroup.add(brakeHose);
+
+      /* Задний суппорт меньше — пропорционально диску 310 мм */
+      caliperGroup.scale.setScalar(discR / 0.1725);
 
       const rotatingWheelGroup = new THREE.Group();
       wheelGroup.add(rotatingWheelGroup);
@@ -2068,23 +2139,24 @@ export async function buildVehicle(ctx) {
       centerCapRing.position.x = sign * 0.074;
       rotatingWheelGroup.add(centerCapRing);
 
-      /* Покрышка 225/40 R18 */
+      /* Покрышка 225/40 R18: внешний радиус 318.6 мм, ширина 225 мм,
+       борт (r = 231 мм) накрывает полку обода (r = 229 мм) */
       const tireProfile = [
-        [0.224, -0.086],
-        [0.243, -0.099],
-        [0.268, -0.104],
-        [0.295, -0.099],
-        [0.313, -0.086],
-        [0.322, -0.062],
-        [0.3255, -0.03],
-        [0.326, 0],
-        [0.3255, 0.03],
-        [0.322, 0.062],
-        [0.313, 0.086],
-        [0.295, 0.099],
-        [0.268, 0.104],
-        [0.243, 0.099],
-        [0.224, 0.086],
+        [0.231, -0.082],
+        [0.252, -0.104],
+        [0.278, -0.112],
+        [0.3, -0.108],
+        [0.3125, -0.095],
+        [0.318, -0.062],
+        [0.3186, -0.028],
+        [0.3186, 0],
+        [0.3186, 0.028],
+        [0.318, 0.062],
+        [0.3125, 0.095],
+        [0.3, 0.108],
+        [0.278, 0.112],
+        [0.252, 0.104],
+        [0.231, 0.082],
       ].map((p) => new THREE.Vector2(p[0], p[1]));
 
       const tireGeo = new THREE.LatheGeometry(tireProfile, SEG(72, 44));

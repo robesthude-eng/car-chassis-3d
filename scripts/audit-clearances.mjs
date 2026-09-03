@@ -118,7 +118,7 @@ function envelopes(dy) {
 		{ n: "верхний рычаг", a: inner.up, b: swing(inner.up, carrier("upOut"), dy), r: 0.019 },
 		{ n: "развальная тяга", a: inner.cam, b: swing(inner.cam, carrier("camOut"), dy), r: 0.015 },
 		{ n: "сходовая тяга", a: inner.toe, b: swing(inner.toe, carrier("toeOut"), dy), r: 0.015 },
-		{ n: "продольный рычаг", a: trailingIn, b: swing(trailingIn, carrier("trOut"), dy), r: 0.05 },
+		{ n: "продольный рычаг", a: trailingIn, b: swing(trailingIn, carrier("trOut"), dy), r: 0.042 },
 	];
 }
 
@@ -208,7 +208,7 @@ for (let i = 0; i < names.length; i++) {
 }
 
 /* ---------- колёсные ниши ---------- */
-const TIRE_R = 0.326, TIRE_IN = 0.676, TIRE_OUT = 0.884;
+const TIRE_R = 0.3186, TIRE_IN = 0.6675, TIRE_OUT = 0.8925, BEAD_R = 0.2286;
 const aabbFromObb = (obb) => {
 	const e = [0, 1, 2].map((i) =>
 		Math.abs(obb.axes[0][i]) * obb.half[0] + Math.abs(obb.axes[1][i]) * obb.half[1] + Math.abs(obb.axes[2][i]) * obb.half[2]);
@@ -241,6 +241,53 @@ for (const [axleZ, tag] of [[CHASSIS.frontAxleZ, "\u043f\u0435\u0440\u0435\u0434
 	}
 }
 if (!wheelHits) console.log("  \u043d\u0435\u0442");
+
+/* ---------- движущиеся детали против бочки обода и покрышки ---------- */
+const BARREL = [
+	[0, 0.184], [0.014, 0.184], [0.038, 0.184], [0.058, 0.216],
+	[0.082, 0.216], [0.086, 0.2255], [0.092, 0.229], [0.098, 0.212],
+];
+const barrelR = (lx) => {
+	const a = Math.abs(lx);
+	if (a >= 0.0985) return 9;
+	for (let i = 1; i < BARREL.length; i++) {
+		if (a <= BARREL[i][0]) {
+			const [ax, ar] = BARREL[i - 1], [bx, br] = BARREL[i];
+			return ar + ((br - ar) * (a - ax)) / (bx - ax);
+		}
+	}
+	return 9;
+};
+console.log("\n=== ДВИЖУЩИЕСЯ ДЕТАЛИ И КОЛЕСО (заход, мм) ===");
+let barrelHits = 0;
+for (const env of envelopes(0)) {
+	let worstBarrel = -Infinity, worstTire = -Infinity, wdyB = 0, wdyT = 0;
+	for (const dy of steps) {
+		const e = envelopes(dy).find((x) => x.n === env.n);
+		const cy = WHEEL.y + dy;
+		for (let i = 0; i <= 40; i++) {
+			const px = e.a.x + (e.b.x - e.a.x) * (i / 40);
+			const py = e.a.y + (e.b.y - e.a.y) * (i / 40);
+			const pz = e.a.z + (e.b.z - e.a.z) * (i / 40);
+			const lx = Math.abs(px) - 0.78;
+			const rad = Math.hypot(py - cy, pz - CHASSIS.rearAxleZ) + e.r;
+			const b = rad - barrelR(lx);
+			if (b > worstBarrel) { worstBarrel = b; wdyB = dy; }
+			const t = Math.abs(lx) <= 0.1125 && rad > BEAD_R && rad < TIRE_R + 0.004
+				? Math.min(rad - BEAD_R, TIRE_R - rad + 0.004) : -Infinity;
+			if (t > worstTire) { worstTire = t; wdyT = dy; }
+		}
+	}
+	if (worstBarrel > -0.002) {
+		barrelHits++;
+		console.log("  " + env.n.padEnd(28) + " бочка обода: заход " + mm(worstBarrel) + "  ход " + mm(wdyB));
+	}
+	if (worstTire > 0) {
+		barrelHits++;
+		console.log("  " + env.n.padEnd(28) + " покрышка: заход " + mm(worstTire) + "  ход " + mm(wdyT));
+	}
+}
+if (!barrelHits) console.log("  нет");
 
 /* ---------- висящие в воздухе детали ---------- */
 const aabbOf = (obb) => {

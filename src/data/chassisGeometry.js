@@ -22,7 +22,7 @@ const rearCarrierPoints = Object.freeze({
   splOut: Object.freeze([-0.09, -0.11, 0.02]),
   camOut: Object.freeze([-0.08, -0.1, -0.1]),
   toeOut: Object.freeze([-0.12, 0.01, 0.21]),
-  trOut: Object.freeze([-0.05, -0.04, -0.17]),
+  trOut: Object.freeze([-0.12, -0.06, -0.14]),
 });
 
 /* Нижняя опора амортизатора на PQ35 стоит НЕ на цапфе, а на пружинном
