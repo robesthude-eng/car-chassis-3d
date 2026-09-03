@@ -67,7 +67,11 @@ await buildVehicle({
 
 /* ---------- неподвижная структура ---------- */
 const parts = [];
-for (const groupName of ["chassisFrameGroup", "rearSubframeGroup"]) {
+for (const groupName of [
+	"chassisFrameGroup",
+	"rearSubframeGroup",
+	"drivetrainGroup",
+]) {
 	groups[groupName].traverse((o) => {
 		if (o.type !== "Mesh") return;
 		const obb = worldObb(o);
@@ -108,11 +112,11 @@ function envelopes(dy) {
 	eye.z += RHP.dmpSeatAft;
 	return [
 		{ n: "пружина", a: seat, b: springTop, r: 0.0535 },
-		{ n: "амортизатор", a: eye, b: damperTop, r: 0.033 },
-		{ n: "вилка аморта", a: { x: eye.x - 0.043, y: eye.y + 0.02, z: eye.z }, b: { x: eye.x + 0.043, y: eye.y + 0.02, z: eye.z }, r: 0.037 },
+		{ n: "амортизатор", a: eye, b: damperTop, r: 0.027 },
+		{ n: "вилка аморта", a: { x: eye.x - 0.043, y: eye.y + 0.02, z: eye.z }, b: { x: eye.x + 0.043, y: eye.y + 0.02, z: eye.z }, r: 0.028 },
 		{ n: "пружинный рычаг", a: inner.spl, b: splOut, r: 0.04 },
 		{ n: "верхний рычаг", a: inner.up, b: swing(inner.up, carrier("upOut"), dy), r: 0.019 },
-		{ n: "развальная тяга", a: inner.cam, b: swing(inner.cam, carrier("camOut"), dy), r: 0.017 },
+		{ n: "развальная тяга", a: inner.cam, b: swing(inner.cam, carrier("camOut"), dy), r: 0.015 },
 		{ n: "сходовая тяга", a: inner.toe, b: swing(inner.toe, carrier("toeOut"), dy), r: 0.015 },
 		{ n: "продольный рычаг", a: trailingIn, b: swing(trailingIn, carrier("trOut"), dy), r: 0.05 },
 	];
@@ -120,6 +124,12 @@ function envelopes(dy) {
 
 const mm = (v) => (v * 1000).toFixed(0);
 const dist3 = (p, q) => Math.hypot(p[0] - q.x, p[1] - q.y, p[2] - q.z);
+/* Детали самого шарнира (щёки, кронштейн, чашка) касаются рычага по замыслу. */
+const partCenter = (part) => part.obb?.center ?? part.center ?? part.c ?? null;
+const cenNear = (part, p) => {
+	const c = partCenter(part);
+	return c ? dist3(c, p) < 0.09 : false;
+};
 const worst = new Map();
 const steps = [];
 for (let i = -SWEEP_MM; i <= SWEEP_MM; i += 10) steps.push(i / 1000);
@@ -138,6 +148,7 @@ for (const dy of steps) {
 			// точки у своих же опор игнорируем: там контакт по замыслу
 			if (dist3(p, env.a) < 0.09 || dist3(p, env.b) < 0.09) continue;
 			for (const part of parts) {
+				if (cenNear(part, env.a) || cenNear(part, env.b)) continue;
 				for (const side of [1]) {
 					const q = side > 0 ? p : [-p[0], p[1], p[2]];
 					const pen = env.r - distancePointToObb(q, part.obb);

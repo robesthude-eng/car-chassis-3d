@@ -1,10 +1,10 @@
 const point = (x, y, z) => Object.freeze({ x, y, z });
 
 const rearSubframeHardpoints = Object.freeze({
-  upperArm: point(0.26, 0.21, -0.07),
-  springLink: point(0.21, -0.01, 0.03),
-  camberLink: point(0.24, 0.05, 0.17),
-  toeLink: point(0.19, 0.13, 0.24),
+  upperArm: point(0.4, 0.2355, -0.0636),
+  springLink: point(0.4, 0.0296, 0.026),
+  camberLink: point(0.4, 0.0813, 0.1596),
+  toeLink: point(0.4, 0.1657, 0.2266),
 });
 
 const rearBodyHardpoints = Object.freeze({
@@ -33,9 +33,9 @@ const rearCarrierPoints = Object.freeze({
  ВАЖНО: обод занимает ±98 мм от плоскости колеса, шина ±104 мм. При
  seatT ближе к 1.0 нижний конец амортизатора уйдёт в диск. */
 const rearDamperMount = Object.freeze({
-  seatT: 0.86,
+  seatT: 0.7683,
   lift: 0.062,
-  aft: 0.1,
+  aft: 0.082,
 });
 
 export const CHASSIS_GEOMETRY = Object.freeze({
@@ -57,7 +57,7 @@ export const CHASSIS_GEOMETRY = Object.freeze({
     hardpoints: rearSubframeHardpoints,
     bodyMounts: Object.freeze([
       point(0.45, 0.04, -0.18),
-      point(0.45, 0.04, 0.18),
+      point(0.45, 0.04, 0.3),
     ]),
   }),
   rearBody: rearBodyHardpoints,

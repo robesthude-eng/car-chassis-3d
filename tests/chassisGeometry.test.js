@@ -110,3 +110,31 @@ test("задняя пружина стоит снаружи лонжерона",
     "нижняя опора амортизатора должна быть отнесена назад дальше радиуса витков",
   );
 });
+
+test("внутренние шарниры задних рычагов стоят на боковине подрамника", () => {
+	const RAIL_OUTER_X = 0.3925; // боковина 0.085 шириной на x = 0.35
+	const wheel = { x: 0.78, y: 0.32, z: CHASSIS_GEOMETRY.rearAxleZ };
+	const pairs = [
+		["upperArm", "upOut"],
+		["springLink", "splOut"],
+		["camberLink", "camOut"],
+		["toeLink", "toeOut"],
+	];
+	for (const [name, key] of pairs) {
+		const inner = rearSubframeWorldPoint(name, 1);
+		assert.ok(
+			inner.x >= RAIL_OUTER_X,
+			`${name}: шарнир внутри подрамника (x = ${inner.x})`,
+		);
+		const off = CHASSIS_GEOMETRY.rearCarrier[key];
+		const len = Math.hypot(
+			wheel.x + off[0] - inner.x,
+			wheel.y + off[1] - inner.y,
+			wheel.z + off[2] - inner.z,
+		);
+		assert.ok(
+			len > 0.24 && len < 0.36,
+			`${name}: длина рычага ${(len * 1000).toFixed(0)} мм вне диапазона 240...360`,
+		);
+	}
+});

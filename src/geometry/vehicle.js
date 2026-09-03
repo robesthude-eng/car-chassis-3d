@@ -200,12 +200,47 @@ export async function buildVehicle(ctx) {
       frontKick.castShadow = true;
       chassisFrameGroup.add(frontKick);
 
-      const rearArchGeo = new THREE.BoxGeometry(0.06, 0.09, 0.8);
-      const rearArch = new THREE.Mesh(rearArchGeo, railMat);
-      rearArch.position.set(x, 0.26, CHASSIS.rearAxleZ);
-      rearArch.rotation.x = 0.1;
-      rearArch.castShadow = true;
-      chassisFrameGroup.add(rearArch);
+      /* Задний лонжерон уходит ВВЕРХ над осью. Прямая балка на высоте
+       0.26 там физически невозможна: на x 0.42...0.48 четыре рычага заметают
+       коридор y 0.07...0.44, и балка стояла прямо в них. Теперь кик-ап
+       поднимает лонжерон на 0.52 — на нём же стоит стакан амортизатора. */
+      const rearKickBase = CHASSIS.rearAxleZ - 0.31;
+      const rearKickTop = CHASSIS.rearAxleZ - 0.11;
+      const rearRailY = 0.52;
+      const rearRailYAt = (z) =>
+        z <= rearKickTop
+          ? 0.24 +
+            ((z - rearKickBase) / (rearKickTop - rearKickBase)) *
+              (rearRailY - 0.24)
+          : rearRailY;
+      addBoxBeam(
+        chassisFrameGroup,
+        V3(x, 0.24, rearKickBase),
+        V3(x, rearRailY, rearKickTop),
+        0.06,
+        0.09,
+        railMat,
+      );
+      addBoxBeam(
+        chassisFrameGroup,
+        V3(x, rearRailY, rearKickTop),
+        V3(x, rearRailY, CHASSIS.rearAxleZ + 0.42),
+        0.06,
+        0.09,
+        railMat,
+      );
+      /* Кузовные опоры подрамника висят на кронштейнах под лонжероном. */
+      CHASSIS.rearSubframe.bodyMounts.forEach((mountPoint) => {
+        const mz = CHASSIS.rearAxleZ + mountPoint.z;
+        addBoxBeam(
+          chassisFrameGroup,
+          V3(x, rearRailYAt(mz) - 0.02, mz),
+          V3(x, 0.235, mz),
+          0.05,
+          0.06,
+          railMat,
+        );
+      });
 
       // FRONT STRUT TOWERS
       const towerFrontGroup = new THREE.Group();
@@ -380,8 +415,8 @@ export async function buildVehicle(ctx) {
       /* Подкос лонжерон -> косынка проходит позади сходовой тяги. */
       addBoxBeam(
         chassisFrameGroup,
-        V3(sign * CHASSIS.mainRailX, 0.28, CHASSIS.rearAxleZ + 0.35),
-        V3(sign * 0.528, 0.42, CHASSIS.rearAxleZ + 0.26),
+        V3(sign * CHASSIS.mainRailX, 0.5, CHASSIS.rearAxleZ + 0.35),
+        V3(sign * 0.528, 0.47, CHASSIS.rearAxleZ + 0.26),
         0.04,
         0.05,
         materials.subframeAluminum,
@@ -416,7 +451,7 @@ export async function buildVehicle(ctx) {
        мимо витков (расчётный зазор 9 мм), а не сквозь пружину. */
       addBoxBeam(
         chassisFrameGroup,
-        V3(sign * CHASSIS.mainRailX, 0.28, CHASSIS.rearAxleZ - 0.2),
+        V3(sign * CHASSIS.mainRailX, 0.42, CHASSIS.rearAxleZ - 0.2),
         V3(sign * 0.5, springTop.y - 0.015, CHASSIS.rearAxleZ - 0.06),
         0.038,
         0.05,
@@ -490,9 +525,17 @@ export async function buildVehicle(ctx) {
 
     /* Четыре точки каждого подрамника теперь заканчиваются в силовых чашках
      лонжеронов кузова; вертикальные болты физически входят в них. */
-    [CHASSIS.frontAxleZ, CHASSIS.rearAxleZ].forEach((axleZ) => {
+    [
+      { axleZ: CHASSIS.frontAxleZ, offsets: [-0.18, 0.18] },
+      {
+        axleZ: CHASSIS.rearAxleZ,
+        /* Чашки берутся из тех же данных, что и опоры подрамника,
+         иначе болт уходит в воздух при любом сдвиге точки. */
+        offsets: CHASSIS.rearSubframe.bodyMounts.map((m) => m.z),
+      },
+    ].forEach(({ axleZ, offsets }) => {
       [-1, 1].forEach((sign) => {
-        [-0.18, 0.18].forEach((zOffset) => {
+        offsets.forEach((zOffset) => {
           addBodyMountReceiver(
             chassisFrameGroup,
             sign * CHASSIS.mainRailX,
@@ -507,7 +550,7 @@ export async function buildVehicle(ctx) {
       const cmGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.96, 12);
       const cm = new THREE.Mesh(cmGeo, materials.subframeAluminum);
       cm.rotation.z = Math.PI / 2;
-      cm.position.set(0, 0.2, z);
+      cm.position.set(0, z > 1.4 ? 0.5 : 0.2, z);
       cm.castShadow = true;
       chassisFrameGroup.add(cm);
     });
@@ -682,9 +725,11 @@ export async function buildVehicle(ctx) {
       rearSubframeMeshGroup.add(sideRail);
 
       CHASSIS.rearSubframe.bodyMounts.forEach((mountPoint) => {
+        /* Опора может стоять за торцом боковины — прижимаем старт балки. */
+        const startZ = Math.min(0.22, Math.max(-0.22, mountPoint.z));
         addBoxBeam(
           rearSubframeMeshGroup,
-          V3(sign * rearRailX, 0.018, mountPoint.z),
+          V3(sign * rearRailX, 0.018, startZ),
           V3(sign * mountPoint.x, mountPoint.y, mountPoint.z),
           0.06,
           0.075,
@@ -702,7 +747,7 @@ export async function buildVehicle(ctx) {
     rearSubframeMeshGroup.add(rearFrontCross);
 
     const rearCenterCross = new THREE.Mesh(
-      new THREE.BoxGeometry(0.54, 0.06, 0.075),
+      new THREE.BoxGeometry(0.63, 0.06, 0.075),
       materials.subframeAluminum,
     );
     rearCenterCross.position.set(0, -0.015, 0.03);
@@ -735,34 +780,40 @@ export async function buildVehicle(ctx) {
       });
 
       const hp = CHASSIS.rearSubframe.hardpoints;
+      /* Шарниры вынесены на боковину подрамника (x = 0.40), и все
+       кронштейнные балки идут от шарнира только ВНУТРЬ. Снаружи
+       остаётся пустой коридор — там качается рычаг. */
       const mounts = [
         {
           name: "upperArm",
           point: hp.upperArm,
           anchors: [
-            V3(sign * rearRailX, 0.025, -0.15),
-            V3(sign * 0.44, 0.04, -0.18),
+            V3(sign * rearRailX, 0.055, -0.06),
+            V3(sign * rearRailX, 0.03, 0.075),
           ],
         },
         {
           name: "springLink",
           point: hp.springLink,
-          anchors: [V3(sign * rearRailX, -0.005, 0.03)],
+          anchors: [
+            V3(sign * rearRailX, 0.018, 0.026),
+            V3(sign * rearRailX, 0.018, 0.1),
+          ],
         },
         {
           name: "camberLink",
           point: hp.camberLink,
           anchors: [
-            V3(sign * rearRailX, 0.025, 0.14),
-            V3(sign * 0.3, 0.025, 0.205),
+            V3(sign * rearRailX, 0.04, 0.16),
+            V3(sign * rearRailX, 0.028, 0.09),
           ],
         },
         {
           name: "toeLink",
           point: hp.toeLink,
           anchors: [
-            V3(sign * 0.32, 0.04, 0.205),
-            V3(sign * rearRailX, 0.025, 0.17),
+            V3(sign * rearRailX, 0.055, 0.22),
+            V3(sign * rearRailX, 0.04, 0.14),
           ],
         },
       ];
@@ -772,7 +823,8 @@ export async function buildVehicle(ctx) {
         const clevis = addClevisMount(rearSubframeMeshGroup, hardpoint, "z", {
           gap: 0.052,
           height: name === "upperArm" ? 0.105 : 0.09,
-          span: name === "toeLink" ? 0.075 : 0.085,
+          span:
+              name === "upperArm" ? 0.07 : name === "toeLink" ? 0.075 : 0.085,
           boltRadius: 0.009,
         });
         clevis.userData.hardpoint = name;
@@ -1430,7 +1482,7 @@ export async function buildVehicle(ctx) {
     const trailingArm = boxRod(0.052, 0.42, 0.095, materials.rearLinkAluminum);
     const upperArm = rodMesh(0.019, 0.34, materials.rearLinkAluminum);
     const springLink = boxRod(0.05, 0.4, 0.072, materials.rearLinkAluminum);
-    const camberLink = rodMesh(0.017, 0.36, materials.rearLinkAluminum);
+    const camberLink = rodMesh(0.014, 0.36, materials.rearLinkAluminum);
     const toeLink = rodMesh(0.015, 0.34, materials.rearLinkAluminum);
 
     /* Сайлентблоки внутренних шарниров: 0..3 — к подрамнику, 4 — продольный рычаг к кузову */
@@ -1484,7 +1536,7 @@ export async function buildVehicle(ctx) {
     group.add(damperGroup);
 
     const damperBody = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.028, 0.031, 0.24, SEG(14, 9)),
+      new THREE.CylinderGeometry(0.024, 0.026, 0.24, SEG(14, 9)),
       materials.mcphersonStrut,
     );
     damperBody.position.y = 0.13;
@@ -1524,7 +1576,7 @@ export async function buildVehicle(ctx) {
 
     [-0.033, 0.033].forEach((fx) => {
       const clevisPlate = new THREE.Mesh(
-        new THREE.BoxGeometry(0.012, 0.07, 0.05),
+        new THREE.BoxGeometry(0.012, 0.07, 0.044),
         materials.rearLinkAluminum,
       );
       clevisPlate.position.set(fx, -0.005, 0);
@@ -1533,7 +1585,7 @@ export async function buildVehicle(ctx) {
     });
 
     const damperClevisPad = new THREE.Mesh(
-      new THREE.BoxGeometry(0.086, 0.014, 0.062),
+      new THREE.BoxGeometry(0.086, 0.014, 0.05),
       materials.rearLinkAluminum,
     );
     damperClevisPad.position.y = -0.037;
