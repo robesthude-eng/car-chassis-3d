@@ -313,34 +313,42 @@ export async function buildVehicle(ctx) {
         rearDamperTop.y - 0.32,
         CHASSIS.rearAxleZ + rearDamperTop.z,
       );
-      const rearTrussGeo = new THREE.CylinderGeometry(0.016, 0.024, 0.62, 10);
-      const rLeg1 = new THREE.Mesh(rearTrussGeo, materials.subframeAluminum);
-      rLeg1.position.set(0, -0.03, 0.075);
-      rLeg1.rotation.x = -0.18;
-      rLeg1.castShadow = true;
-      towerRearGroup.add(rLeg1);
-      const rLeg2 = new THREE.Mesh(rearTrussGeo, materials.subframeAluminum);
-      rLeg2.position.set(0, -0.03, -0.075);
-      rLeg2.rotation.x = 0.18;
-      rLeg2.castShadow = true;
-      towerRearGroup.add(rLeg2);
-      const rLegOuter = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.014, 0.02, 0.58, 10),
-        materials.subframeAluminum,
-      );
-      rLegOuter.position.set(sign * 0.055, 0.0, 0);
-      rLegOuter.rotation.z = -sign * 0.09;
-      rLegOuter.castShadow = true;
-      towerRearGroup.add(rLegOuter);
-      const rearCone = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.07, 0.105, 0.09, 22, 1, true),
+      /* Ноги стакана уходят внутрь кузова — на косынку арки (x ≈ 0.565) и
+       на панель арки (x ≈ 0.54), а не отвесно вниз вдоль амортизатора.
+       Раньше три ноги шли по его же оси до y ≈ 0.12, а наружная (x = 0.685)
+       вообще задевала внутреннюю боковину шины: на экране это читалось
+       как «три трубы», внутри которых где-то спрятан сам амортизатор. */
+      const rearTrussGeo = new THREE.CylinderGeometry(0.015, 0.023, 0.34, 10);
+      [0.085, -0.085].forEach((legZ) => {
+        const rLeg = new THREE.Mesh(rearTrussGeo, materials.subframeAluminum);
+        rLeg.position.set(-sign * 0.03, 0.17, legZ);
+        rLeg.rotation.z = -sign * 0.2;
+        rLeg.castShadow = true;
+        towerRearGroup.add(rLeg);
+      });
+
+      /* Третий элемент — не труба, а косынка листом от стакана на
+       внутреннюю панель арки: так вокруг амортизатора остаются только
+       две тонкие ноги, а не три одинаковые трубы. */
+      const rearTowerGusset = new THREE.Mesh(
+        new THREE.BoxGeometry(0.075, 0.3, 0.014),
         materials.frame,
       );
-      rearCone.position.set(0, 0.265, 0);
+      rearTowerGusset.position.set(-sign * 0.045, 0.13, 0);
+      rearTowerGusset.castShadow = true;
+      towerRearGroup.add(rearTowerGusset);
+
+      /* Сам стакан узкий и поднят, чтобы под ним была видна верхняя
+       опора амортизатора и шток */
+      const rearCone = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.075, 0.08, 22, 1, true),
+        materials.frame,
+      );
+      rearCone.position.set(0, 0.245, 0);
       rearCone.castShadow = true;
       towerRearGroup.add(rearCone);
       const rTopPlate = new THREE.Mesh(topHatPlateGeo, materials.frame);
-      rTopPlate.position.set(0, 0.32, 0);
+      rTopPlate.position.set(0, 0.345, 0);
       rTopPlate.castShadow = true;
       towerRearGroup.add(rTopPlate);
       for (let rn = 0; rn < 3; rn++) {
@@ -349,7 +357,7 @@ export async function buildVehicle(ctx) {
         rNut.rotation.x = Math.PI / 2;
         rNut.position.set(
           Math.cos(rang) * 0.048,
-          0.339,
+          0.364,
           Math.sin(rang) * 0.048,
         );
         towerRearGroup.add(rNut);

@@ -23,7 +23,10 @@ const rearCarrierPoints = Object.freeze({
   camOut: Object.freeze([-0.08, -0.06, 0.14]),
   toeOut: Object.freeze([-0.12, 0.01, 0.21]),
   trOut: Object.freeze([-0.05, -0.04, -0.17]),
-  dmpBot: Object.freeze([-0.035, -0.05, 0.11]),
+  /* ВАЖНО: полколесный габарит. Обод занимает ±98 мм от плоскости
+   колеса, шина ±104 мм. Нижняя опора амортизатора должна быть внутрь от
+   обода (|x| > 0.10), иначе амортизатор проходит сквозь диск. */
+  dmpBot: Object.freeze([-0.155, -0.05, 0.105]),
 });
 
 export const CHASSIS_GEOMETRY = Object.freeze({

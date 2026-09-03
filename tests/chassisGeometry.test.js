@@ -47,6 +47,25 @@ test("rear body mounts align with the visible spring and damper towers", () => {
   assertPoint(rightTrailing, { x: 0.6, y: 0.3, z: 0.76 });
 });
 
+test("точки задней цапфы заданы и не лезут в колесо", () => {
+  const carrier = CHASSIS_GEOMETRY.rearCarrier;
+  const names = ["upOut", "splOut", "camOut", "toeOut", "trOut", "dmpBot"];
+  for (const name of names) {
+    const loc = carrier[name];
+    assert.equal(loc.length, 3, `${name} обязан быть тройкой координат`);
+    assert.ok(loc.every(Number.isFinite), `${name} содержит не число`);
+    assert.ok(loc[0] < 0, `${name} должен смотреть внутрь машины`);
+  }
+
+  /* Обод занимает ±98 мм от плоскости колеса: нижняя опора
+   амортизатора обязана стоять внутрь от него, иначе амортизатор
+   графически проходит сквозь диск. */
+  assert.ok(
+    Math.abs(carrier.dmpBot[0]) > 0.1,
+    `dmpBot на ${carrier.dmpBot[0]} попадает в обод колеса`,
+  );
+});
+
 test("unknown suspension hardpoints fail loudly", () => {
   assert.throws(() => rearSubframeWorldPoint("missing", 1), RangeError);
   assert.throws(() => rearBodyWorldPoint("missing", -1), RangeError);
