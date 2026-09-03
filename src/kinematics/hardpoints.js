@@ -60,7 +60,7 @@ export function createHardpoints(CHASSIS) {
       rearBodyHP.trailingArm.z,
     ],
     trOut: rearCarrierHP.trOut,
-    springSeatT: 0.62,
+    springSeatT: 0.72,
     springTopX: rearBodyHP.springTop.x,
     springTopY: rearBodyHP.springTop.y,
     springTopZ: rearBodyHP.springTop.z,

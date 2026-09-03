@@ -41,9 +41,9 @@ test("rear body mounts align with the visible spring and damper towers", () => {
   const rightDamper = rearBodyWorldPoint("damperTop", 1);
   const rightTrailing = rearBodyWorldPoint("trailingArm", 1);
 
-  assertPoint(leftSpring, { x: -0.48, y: 0.6, z: 1.315 });
-  assertPoint(rightSpring, { x: 0.48, y: 0.6, z: 1.315 });
-  assertPoint(rightDamper, { x: 0.63, y: 0.78, z: 1.41 });
+  assertPoint(leftSpring, { x: -0.56, y: 0.6, z: 1.315 });
+  assertPoint(rightSpring, { x: 0.56, y: 0.6, z: 1.315 });
+  assertPoint(rightDamper, { x: 0.63, y: 0.78, z: 1.5 });
   assertPoint(rightTrailing, { x: 0.6, y: 0.3, z: 0.76 });
 });
 
@@ -92,4 +92,21 @@ test("нижняя опора амортизатора стоит на пруж�
 test("unknown suspension hardpoints fail loudly", () => {
   assert.throws(() => rearSubframeWorldPoint("missing", 1), RangeError);
   assert.throws(() => rearBodyWorldPoint("missing", -1), RangeError);
+});
+
+/* Пружина должна стоять в кармане арки снаружи от лонжерона:
+ в прошлой геометрии её витки шли сквозь лонжерон и панель арки. */
+test("задняя пружина стоит снаружи лонжерона", () => {
+  const SPRING_OUTER_R = 0.0535;
+  const top = rearBodyWorldPoint("springTop", 1);
+  const railOuterX = CHASSIS_GEOMETRY.mainRailX + 0.03;
+  assert.ok(
+    top.x - SPRING_OUTER_R > railOuterX,
+    `витки пружины (${(top.x - SPRING_OUTER_R).toFixed(3)}) должны быть снаружи лонжерона (${railOuterX})`,
+  );
+  const mount = CHASSIS_GEOMETRY.rearDamperMount;
+  assert.ok(
+    mount.aft > SPRING_OUTER_R,
+    "нижняя опора амортизатора должна быть отнесена назад дальше радиуса витков",
+  );
 });

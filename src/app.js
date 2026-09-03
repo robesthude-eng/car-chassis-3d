@@ -344,7 +344,7 @@ async function bootstrapScene() {
     },
     {
       title: "Задний амортизатор (без пружины)",
-      pos: new THREE.Vector3(-0.7, 0.64, 1.41),
+      pos: new THREE.Vector3(-0.7, 0.64, 1.5),
     },
     {
       title: "Задний ступичный узел · 1T0598611",

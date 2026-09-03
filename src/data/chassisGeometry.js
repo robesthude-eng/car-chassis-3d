@@ -9,8 +9,8 @@ const rearSubframeHardpoints = Object.freeze({
 
 const rearBodyHardpoints = Object.freeze({
   trailingArm: point(0.6, 0.3, -0.54),
-  springTop: point(0.48, 0.6, 0.015),
-  damperTop: point(0.63, 0.78, 0.11),
+  springTop: point(0.56, 0.6, 0.015),
+  damperTop: point(0.63, 0.78, 0.2),
 });
 
 /* Точки крепления рычагов на ЗАДНЕЙ ЦАПФЕ: локальные смещения от центра
@@ -34,8 +34,8 @@ const rearCarrierPoints = Object.freeze({
  seatT ближе к 1.0 нижний конец амортизатора уйдёт в диск. */
 const rearDamperMount = Object.freeze({
   seatT: 0.86,
-  lift: 0.055,
-  aft: 0.055,
+  lift: 0.062,
+  aft: 0.1,
 });
 
 export const CHASSIS_GEOMETRY = Object.freeze({

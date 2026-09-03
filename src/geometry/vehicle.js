@@ -239,11 +239,14 @@ export async function buildVehicle(ctx) {
       strutLeg2.castShadow = true;
       towerFrontGroup.add(strutLeg2);
 
+      /* Раньше эта нога шла наружу и доходила до x = 0.713 при внутренней
+       кромке покрышки 0.676 - то есть жила внутри боковины колеса.
+       Развернута внутрь и опирается на панель арки: до колеса 77 мм. */
       const strutLegOuter = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.016, 0.022, 0.62, 10),
+        new THREE.CylinderGeometry(0.016, 0.022, 0.54, 10),
         materials.subframeAluminum,
       );
-      strutLegOuter.position.set(sign * 0.06, 0.3, 0);
+      strutLegOuter.position.set(-sign * 0.05, 0.33, 0);
       strutLegOuter.rotation.z = sign * 0.1;
       strutLegOuter.castShadow = true;
       towerFrontGroup.add(strutLegOuter);
@@ -313,16 +316,16 @@ export async function buildVehicle(ctx) {
         rearDamperTop.y - 0.32,
         CHASSIS.rearAxleZ + rearDamperTop.z,
       );
-      /* Ноги стакана уходят внутрь кузова — на косынку арки (x ≈ 0.565) и
-       на панель арки (x ≈ 0.54), а не отвесно вниз вдоль амортизатора.
+      /* Ноги стакана уходят внутрь кузова и обе встают на косынку
+       арки (x = 0.528), а не отвесно вниз вдоль амортизатора.
        Раньше три ноги шли по его же оси до y ≈ 0.12, а наружная (x = 0.685)
        вообще задевала внутреннюю боковину шины: на экране это читалось
        как «три трубы», внутри которых где-то спрятан сам амортизатор. */
       const rearTrussGeo = new THREE.CylinderGeometry(0.015, 0.023, 0.34, 10);
       [0.085, -0.085].forEach((legZ) => {
         const rLeg = new THREE.Mesh(rearTrussGeo, materials.subframeAluminum);
-        rLeg.position.set(-sign * 0.03, 0.17, legZ);
-        rLeg.rotation.z = -sign * 0.2;
+        rLeg.position.set(-sign * 0.055, 0.17, legZ);
+        rLeg.rotation.z = -sign * 0.28;
         rLeg.castShadow = true;
         towerRearGroup.add(rLeg);
       });
@@ -335,10 +338,10 @@ export async function buildVehicle(ctx) {
       /* Сам стакан узкий и поднят, чтобы под ним была видна верхняя
        опора амортизатора и шток */
       const rearCone = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.05, 0.075, 0.08, 22, 1, true),
+        new THREE.CylinderGeometry(0.046, 0.066, 0.08, 22, 1, true),
         materials.frame,
       );
-      rearCone.position.set(0, 0.245, 0);
+      rearCone.position.set(0, 0.29, 0);
       rearCone.castShadow = true;
       towerRearGroup.add(rearCone);
       const rTopPlate = new THREE.Mesh(topHatPlateGeo, materials.frame);
@@ -358,33 +361,31 @@ export async function buildVehicle(ctx) {
       }
       chassisFrameGroup.add(towerRearGroup);
 
-      /* Внутренняя панель задней арки связывает стакан амортизатора с
-       продольным лонжероном и воспринимает нагрузку верхней опоры.
-       Ширина и положение подобраны так, чтобы амортизатор с рычага
-       (x ≈ 0.62) проходил снаружи от неё, а не сквозь лист. */
-      const rearArchPanel = new THREE.Mesh(
-        new THREE.BoxGeometry(0.115, 0.065, 0.32),
-        materials.frame,
-      );
-      rearArchPanel.position.set(
-        sign * 0.5,
-        0.3,
-        CHASSIS.rearAxleZ + rearDamperTop.z,
-      );
-      rearArchPanel.castShadow = true;
-      chassisFrameGroup.add(rearArchPanel);
-
+      /* Косынка стакана - единственный лист в этой зоне. Габарит
+       посчитан в scripts/audit-clearances.mjs: позади пружины (z >= 1.39),
+       выше сходовой тяги (y >= 0.35) и внутри от корпуса амортизатора
+       (x <= 0.579). На неё опираются обе ноги стакана. */
       const rearArchGusset = new THREE.Mesh(
-        new THREE.BoxGeometry(0.024, 0.31, 0.25),
+        new THREE.BoxGeometry(0.022, 0.22, 0.21),
         materials.subframeAluminum,
       );
       rearArchGusset.position.set(
-        sign * 0.546,
-        0.46,
-        CHASSIS.rearAxleZ + rearDamperTop.z,
+        sign * 0.528,
+        0.51,
+        CHASSIS.rearAxleZ + 0.19,
       );
       rearArchGusset.castShadow = true;
       chassisFrameGroup.add(rearArchGusset);
+
+      /* Подкос лонжерон -> косынка проходит позади сходовой тяги. */
+      addBoxBeam(
+        chassisFrameGroup,
+        V3(sign * CHASSIS.mainRailX, 0.28, CHASSIS.rearAxleZ + 0.35),
+        V3(sign * 0.528, 0.42, CHASSIS.rearAxleZ + 0.26),
+        0.04,
+        0.05,
+        materials.subframeAluminum,
+      );
 
       /* Верхняя чашка задней пружины — отдельный узел кузова PQ35. Точка
        полностью совпадает с расчётной неподвижной опорой пружины. */
@@ -411,20 +412,24 @@ export async function buildVehicle(ctx) {
       springCupRing.position.y -= 0.017;
       chassisFrameGroup.add(springCupRing);
 
+      /* Подкос лонжерон -> чашка подходит к чашке спереди-снизу,
+       мимо витков (расчётный зазор 9 мм), а не сквозь пружину. */
       addBoxBeam(
         chassisFrameGroup,
-        V3(sign * CHASSIS.mainRailX, 0.27, CHASSIS.rearAxleZ - 0.11),
-        V3(springTop.x, springTop.y - 0.018, springTop.z),
+        V3(sign * CHASSIS.mainRailX, 0.28, CHASSIS.rearAxleZ - 0.2),
+        V3(sign * 0.5, springTop.y - 0.015, CHASSIS.rearAxleZ - 0.06),
         0.038,
         0.05,
         materials.subframeAluminum,
       );
+      /* Связь косынки стакана с чашкой идёт на уровне самой чашки:
+       ниже проходят витки, снаружи - корпус амортизатора. */
       addBoxBeam(
         chassisFrameGroup,
-        V3(sign * rearDamperTop.x, 0.43, CHASSIS.rearAxleZ + rearDamperTop.z),
-        V3(springTop.x, springTop.y - 0.018, springTop.z),
-        0.034,
-        0.044,
+        V3(sign * 0.528, springTop.y + 0.005, CHASSIS.rearAxleZ + 0.14),
+        V3(sign * 0.55, springTop.y + 0.005, CHASSIS.rearAxleZ + 0.05),
+        0.03,
+        0.04,
         materials.subframeAluminum,
       );
 
@@ -1457,7 +1462,7 @@ export async function buildVehicle(ctx) {
     group.add(springGroup);
 
     const springMesh = new THREE.Mesh(
-      createCoilSpringGeometry(6, 0.05, 0.36, 0.0075),
+      createCoilSpringGeometry(6, 0.046, 0.36, 0.0075),
       materials.mcphersonSpring,
     );
     springGroup.add(springMesh);
