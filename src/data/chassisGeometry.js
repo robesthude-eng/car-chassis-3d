@@ -3,7 +3,7 @@ const point = (x, y, z) => Object.freeze({ x, y, z });
 const rearSubframeHardpoints = Object.freeze({
   upperArm: point(0.4, 0.2355, -0.0636),
   springLink: point(0.4, 0.0296, 0.026),
-  camberLink: point(0.4, 0.0813, 0.1596),
+  camberLink: point(0.4, 0.04, -0.0636),
   toeLink: point(0.4, 0.1657, 0.2266),
 });
 
@@ -20,7 +20,7 @@ const rearBodyHardpoints = Object.freeze({
 const rearCarrierPoints = Object.freeze({
   upOut: Object.freeze([-0.08, 0.09, -0.05]),
   splOut: Object.freeze([-0.09, -0.11, 0.02]),
-  camOut: Object.freeze([-0.08, -0.06, 0.14]),
+  camOut: Object.freeze([-0.08, -0.1, -0.1]),
   toeOut: Object.freeze([-0.12, 0.01, 0.21]),
   trOut: Object.freeze([-0.05, -0.04, -0.17]),
 });

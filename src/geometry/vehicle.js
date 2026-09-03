@@ -804,8 +804,8 @@ export async function buildVehicle(ctx) {
           name: "camberLink",
           point: hp.camberLink,
           anchors: [
-            V3(sign * rearRailX, 0.04, 0.16),
-            V3(sign * rearRailX, 0.028, 0.09),
+            V3(sign * rearRailX, 0.04, -0.0636),
+            V3(sign * rearRailX, 0.03, -0.13),
           ],
         },
         {
