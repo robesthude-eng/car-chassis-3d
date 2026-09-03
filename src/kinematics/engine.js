@@ -316,17 +316,26 @@ export function createKinematicsEngine({
     cm.springBot.copy(_mB);
     cm.springTop.copy(_mC);
 
-    rearHubPoint(_mA, cm, RHP.dmpBot, cm.dxH, cm.camber, cm.toe, cm.dzH);
+    /* Нижняя опора амортизатора живёт на пружинном рычаге (Federlenker),
+     как на настоящем PQ35, а не на цапфе. _mA всё ещё держит splOut,
+     поэтому проушину считаем по той же хорде рычага, что и чашку пружины.
+     Заодно это даёт реальное передаточное отношение амортизатора (< 1). */
+    const dSeatT = RHP.dmpSeatT;
+    _mB.set(
+      _rIn.spl.x + (_mA.x - _rIn.spl.x) * dSeatT,
+      _rIn.spl.y + (_mA.y - _rIn.spl.y) * dSeatT + RHP.dmpSeatLift,
+      _rIn.spl.z + (_mA.z - _rIn.spl.z) * dSeatT + RHP.dmpSeatAft,
+    );
     bodyPoint(
       _mC,
       cm.sign * RHP.dmpTopX,
       RHP.dmpTopY,
       cm.sc.cfg.z + RHP.dmpTopZ,
     );
-    cm.damperLen = _mA.distanceTo(_mC);
+    cm.damperLen = _mB.distanceTo(_mC);
     cm.dmpBot = cm.dmpBot || new THREE.Vector3();
     cm.dmpTop = cm.dmpTop || new THREE.Vector3();
-    cm.dmpBot.copy(_mA);
+    cm.dmpBot.copy(_mB);
     cm.dmpTop.copy(_mC);
   }
 

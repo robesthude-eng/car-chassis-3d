@@ -47,22 +47,45 @@ test("rear body mounts align with the visible spring and damper towers", () => {
   assertPoint(rightTrailing, { x: 0.6, y: 0.3, z: 0.76 });
 });
 
-test("точки задней цапфы заданы и не лезут в колесо", () => {
+test("точки задней цапфы заданы и смотрят внутрь машины", () => {
   const carrier = CHASSIS_GEOMETRY.rearCarrier;
-  const names = ["upOut", "splOut", "camOut", "toeOut", "trOut", "dmpBot"];
+  const names = ["upOut", "splOut", "camOut", "toeOut", "trOut"];
+  assert.deepEqual(Object.keys(carrier), names);
   for (const name of names) {
     const loc = carrier[name];
     assert.equal(loc.length, 3, `${name} обязан быть тройкой координат`);
     assert.ok(loc.every(Number.isFinite), `${name} содержит не число`);
     assert.ok(loc[0] < 0, `${name} должен смотреть внутрь машины`);
   }
+});
 
-  /* Обод занимает ±98 мм от плоскости колеса: нижняя опора
-   амортизатора обязана стоять внутрь от него, иначе амортизатор
-   графически проходит сквозь диск. */
+test("нижняя опора амортизатора стоит на пружинном рычаге", () => {
+  const mount = CHASSIS_GEOMETRY.rearDamperMount;
   assert.ok(
-    Math.abs(carrier.dmpBot[0]) > 0.1,
-    `dmpBot на ${carrier.dmpBot[0]} попадает в обод колеса`,
+    mount.seatT > 0.62 && mount.seatT < 0.92,
+    `seatT ${mount.seatT}: опора должна быть снаружи чашки пружины (0.62) и не доходить до шарнира цапфы`,
+  );
+  assert.ok(mount.lift > 0, "проушина обязана стоять над осью рычага");
+  assert.ok(mount.aft >= 0, "проушина смещается назад, под стакан кузова");
+
+  /* Плоскость колеса 0.78, обод занимает ±98 мм. Нижний конец
+   амортизатора обязан остаться минимум на 40 мм внутрь от кромки
+   обода, иначе он графически проходит сквозь диск. */
+  const WHEEL_PLANE_X = 0.78;
+  const RIM_HALF_WIDTH = 0.098;
+  const splIn = rearSubframeWorldPoint("springLink", 1);
+  const splOutX = WHEEL_PLANE_X + CHASSIS_GEOMETRY.rearCarrier.splOut[0];
+  const mountX = splIn.x + (splOutX - splIn.x) * mount.seatT;
+  assert.ok(
+    mountX < WHEEL_PLANE_X - RIM_HALF_WIDTH - 0.04,
+    `опора на x=${mountX.toFixed(3)} слишком близко к ободу`,
+  );
+
+  /* Амортизатор должен стоять почти вертикально */
+  const damperTop = rearBodyWorldPoint("damperTop", 1);
+  assert.ok(
+    Math.abs(damperTop.x - mountX) < 0.06,
+    `наклон слишком большой: низ x=${mountX.toFixed(3)}, верх x=${damperTop.x}`,
   );
 });
 

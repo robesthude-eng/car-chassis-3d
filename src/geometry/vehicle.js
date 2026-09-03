@@ -327,16 +327,10 @@ export async function buildVehicle(ctx) {
         towerRearGroup.add(rLeg);
       });
 
-      /* Третий элемент — не труба, а косынка листом от стакана на
-       внутреннюю панель арки: так вокруг амортизатора остаются только
-       две тонкие ноги, а не три одинаковые трубы. */
-      const rearTowerGusset = new THREE.Mesh(
-        new THREE.BoxGeometry(0.075, 0.3, 0.014),
-        materials.frame,
-      );
-      rearTowerGusset.position.set(-sign * 0.045, 0.13, 0);
-      rearTowerGusset.castShadow = true;
-      towerRearGroup.add(rearTowerGusset);
+      /* Третьей ноги у стакана нет сознательно: вниз его держит уже
+       существующая косынка задней арки (rearArchGusset ниже). Раньше
+       здесь стояла ещё одна пластина: она дублировала косынку и
+       проходила сквозь сам амортизатор. */
 
       /* Сам стакан узкий и поднят, чтобы под ним была видна верхняя
        опора амортизатора и шток */
@@ -365,13 +359,15 @@ export async function buildVehicle(ctx) {
       chassisFrameGroup.add(towerRearGroup);
 
       /* Внутренняя панель задней арки связывает стакан амортизатора с
-       продольным лонжероном и воспринимает нагрузку верхней опоры. */
+       продольным лонжероном и воспринимает нагрузку верхней опоры.
+       Ширина и положение подобраны так, чтобы амортизатор с рычага
+       (x ≈ 0.62) проходил снаружи от неё, а не сквозь лист. */
       const rearArchPanel = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, 0.065, 0.32),
+        new THREE.BoxGeometry(0.115, 0.065, 0.32),
         materials.frame,
       );
       rearArchPanel.position.set(
-        sign * 0.54,
+        sign * 0.5,
         0.3,
         CHASSIS.rearAxleZ + rearDamperTop.z,
       );
@@ -383,7 +379,7 @@ export async function buildVehicle(ctx) {
         materials.subframeAluminum,
       );
       rearArchGusset.position.set(
-        sign * 0.565,
+        sign * 0.546,
         0.46,
         CHASSIS.rearAxleZ + rearDamperTop.z,
       );
@@ -1307,7 +1303,6 @@ export async function buildVehicle(ctx) {
       const camEar = at(RC.camOut);
       const toeEar = at(RC.toeOut);
       const trEar = at(RC.trOut);
-      const dmpEar = at(RC.dmpBot);
       const core = new THREE.Vector3(-sign * 0.085, -0.01, 0.01);
 
       /* Стенка от верхней проушины к нижней плюс рога к остальным точкам */
@@ -1315,7 +1310,6 @@ export async function buildVehicle(ctx) {
       web(core, camEar, 0.042, 0.05);
       web(core, toeEar, 0.038, 0.046);
       web(core, trEar, 0.05, 0.058);
-      web(core, dmpEar, 0.036, 0.042);
 
       jointEar(upEar, "z", 0.026, 0.05);
       jointEar(splEar, "z", 0.03, 0.058);
@@ -1323,18 +1317,6 @@ export async function buildVehicle(ctx) {
       jointEar(toeEar, "y", 0.022, 0.046);
       jointEar(trEar, "x", 0.032, 0.064);
 
-      /* Вилка нижней опоры амортизатора: две пластины и поперечный болт */
-      [-0.032, 0.032].forEach((fx) => {
-        const plate = new THREE.Mesh(
-          new THREE.BoxGeometry(0.011, 0.074, 0.05),
-          materials.bracket,
-        );
-        put(plate, dmpEar.x + fx, dmpEar.y, dmpEar.z);
-      });
-
-      const dmpBolt = createHexBoltMesh(0.011, 0.086);
-      dmpBolt.rotation.y = Math.PI / 2;
-      put(dmpBolt, dmpEar.x, dmpEar.y, dmpEar.z, false);
     }
 
     /* Уши крепления суппорта — по касательной к диску */
@@ -1524,6 +1506,38 @@ export async function buildVehicle(ctx) {
     );
     damperLowerEye.rotation.z = Math.PI / 2;
     damperGroup.add(damperLowerEye);
+
+    /* Нижняя проушина сидит в вилке пружинного рычага: резиновый
+     сайлентблок, две пластины и поперечный болт. Вилка едет вместе с
+     амортизатором, потому что она и есть его посадка на рычаг. */
+    const damperLowerBush = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.017, 0.017, 0.056, SEG(12, 8)),
+      materials.bushingRubber,
+    );
+    damperLowerBush.rotation.z = Math.PI / 2;
+    damperGroup.add(damperLowerBush);
+
+    [-0.033, 0.033].forEach((fx) => {
+      const clevisPlate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.012, 0.07, 0.05),
+        materials.rearLinkAluminum,
+      );
+      clevisPlate.position.set(fx, -0.005, 0);
+      clevisPlate.castShadow = true;
+      damperGroup.add(clevisPlate);
+    });
+
+    const damperClevisPad = new THREE.Mesh(
+      new THREE.BoxGeometry(0.086, 0.014, 0.062),
+      materials.rearLinkAluminum,
+    );
+    damperClevisPad.position.y = -0.037;
+    damperClevisPad.castShadow = true;
+    damperGroup.add(damperClevisPad);
+
+    const damperLowerBolt = createHexBoltMesh(0.011, 0.092);
+    damperLowerBolt.rotation.y = Math.PI / 2;
+    damperGroup.add(damperLowerBolt);
 
     return {
       group,

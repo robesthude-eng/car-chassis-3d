@@ -23,10 +23,19 @@ const rearCarrierPoints = Object.freeze({
   camOut: Object.freeze([-0.08, -0.06, 0.14]),
   toeOut: Object.freeze([-0.12, 0.01, 0.21]),
   trOut: Object.freeze([-0.05, -0.04, -0.17]),
-  /* ВАЖНО: полколесный габарит. Обод занимает ±98 мм от плоскости
-   колеса, шина ±104 мм. Нижняя опора амортизатора должна быть внутрь от
-   обода (|x| > 0.10), иначе амортизатор проходит сквозь диск. */
-  dmpBot: Object.freeze([-0.155, -0.05, 0.105]),
+});
+
+/* Нижняя опора амортизатора на PQ35 стоит НЕ на цапфе, а на пружинном
+ рычаге (Federlenker), снаружи от чашки пружины:
+   seatT — доля длины рычага от внутреннего шарнира к цапфе,
+   lift  — подъём проушины над осью рычага,
+   aft   — смещение назад, чтобы попасть под стакан кузова.
+ ВАЖНО: обод занимает ±98 мм от плоскости колеса, шина ±104 мм. При
+ seatT ближе к 1.0 нижний конец амортизатора уйдёт в диск. */
+const rearDamperMount = Object.freeze({
+  seatT: 0.86,
+  lift: 0.055,
+  aft: 0.055,
 });
 
 export const CHASSIS_GEOMETRY = Object.freeze({
@@ -53,6 +62,7 @@ export const CHASSIS_GEOMETRY = Object.freeze({
   }),
   rearBody: rearBodyHardpoints,
   rearCarrier: rearCarrierPoints,
+  rearDamperMount,
 });
 
 export function mirrorHardpoint(pointValue, sign, origin = {}) {

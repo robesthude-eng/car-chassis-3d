@@ -28,6 +28,7 @@ export function createHardpoints(CHASSIS) {
   const rearSubframeHP = CHASSIS.rearSubframe.hardpoints;
   const rearBodyHP = CHASSIS.rearBody;
   const rearCarrierHP = CHASSIS.rearCarrier;
+  const rearDamperHP = CHASSIS.rearDamperMount;
   const RHP = {
     upIn: [
       rearSubframeHP.upperArm.x,
@@ -63,7 +64,9 @@ export function createHardpoints(CHASSIS) {
     springTopX: rearBodyHP.springTop.x,
     springTopY: rearBodyHP.springTop.y,
     springTopZ: rearBodyHP.springTop.z,
-    dmpBot: rearCarrierHP.dmpBot,
+    dmpSeatT: rearDamperHP.seatT,
+    dmpSeatLift: rearDamperHP.lift,
+    dmpSeatAft: rearDamperHP.aft,
     dmpTopX: rearBodyHP.damperTop.x,
     dmpTopY: rearBodyHP.damperTop.y,
     dmpTopZ: rearBodyHP.damperTop.z,
