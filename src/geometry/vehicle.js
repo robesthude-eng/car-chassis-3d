@@ -1153,35 +1153,42 @@ export async function buildVehicle(ctx) {
 
     /* Литая стойка вверх к хомуту амортизатора */
     const upperLeg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.048, 0.125, 4),
+      new THREE.CylinderGeometry(0.03, 0.048, isFront ? 0.125 : 0.088, 4),
       CI,
     );
     upperLeg.geometry.rotateY(Math.PI / 4);
     upperLeg.scale.set(0.72, 1, 1);
     upperLeg.rotation.z = sign * 0.22;
-    put(upperLeg, -sign * 0.094, 0.076, 0);
+    put(upperLeg, -sign * 0.094, isFront ? 0.076 : 0.05, isFront ? 0 : -0.022);
 
-    /* Разрезной хомут стойки Ø55 мм */
-    const clampCollar = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.038, 0.038, 0.09, 24),
-      CI,
-    );
-    put(clampCollar, -sign * 0.105, 0.14, 0);
+    /* Разрезной хомут стойки Ø55 мм — ТОЛЬКО передняя ось: на задней стойки
+     нет, и вместо хомута цапфа несёт проушины рычагов */
+    let pinchBolt = null;
+    if (isFront) {
+      const clampCollar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.038, 0.038, 0.09, 24),
+        CI,
+      );
+      put(clampCollar, -sign * 0.105, 0.14, 0);
 
-    const clampBore = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0295, 0.0295, 0.094, 20, 1, true),
-      materials.rimInner,
-    );
-    put(clampBore, -sign * 0.105, 0.14, 0, false);
+      const clampBore = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0295, 0.0295, 0.094, 20, 1, true),
+        materials.rimInner,
+      );
+      put(clampBore, -sign * 0.105, 0.14, 0, false);
 
-    [-0.016, 0.016].forEach((ex) => {
-      const ear = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.056, 0.034), CI);
-      put(ear, -sign * 0.105 + ex, 0.14, -0.048);
-    });
+      [-0.016, 0.016].forEach((ex) => {
+        const ear = new THREE.Mesh(
+          new THREE.BoxGeometry(0.02, 0.056, 0.034),
+          CI,
+        );
+        put(ear, -sign * 0.105 + ex, 0.14, -0.048);
+      });
 
-    const pinchBolt = createHexBoltMesh(0.01, 0.064);
-    pinchBolt.rotation.y = Math.PI / 2;
-    put(pinchBolt, -sign * 0.105, 0.14, -0.048);
+      pinchBolt = createHexBoltMesh(0.01, 0.064);
+      pinchBolt.rotation.y = Math.PI / 2;
+      put(pinchBolt, -sign * 0.105, 0.14, -0.048);
+    }
 
     /* Нижняя лапа и гнездо шаровой опоры 1K0 407 365 */
     const lowerLeg = new THREE.Mesh(
@@ -1193,14 +1200,16 @@ export async function buildVehicle(ctx) {
     lowerLeg.rotation.z = sign * 0.34;
     put(lowerLeg, -sign * 0.055, -0.062, 0);
 
-    const bjSocket = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.029, 0.033, 0.044, 20),
-      CI,
-    );
-    put(bjSocket, -sign * 0.04, -0.104, 0);
+    if (isFront) {
+      const bjSocket = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.029, 0.033, 0.044, 20),
+        CI,
+      );
+      put(bjSocket, -sign * 0.04, -0.104, 0);
 
-    const lowerLockNut = createHexBoltMesh(0.011, 0.022);
-    put(lowerLockNut, -sign * 0.04, -0.128, 0);
+      const lowerLockNut = createHexBoltMesh(0.011, 0.022);
+      put(lowerLockNut, -sign * 0.04, -0.128, 0);
+    }
 
     /* Рулевой рычаг с конусным гнездом наконечника */
     if (isFront) {
@@ -1229,6 +1238,95 @@ export async function buildVehicle(ctx) {
       const castleNut = createHexBoltMesh(0.011, 0.02);
       castleNut.rotation.x = Math.PI / 2;
       put(castleNut, -sign * 0.025, -0.072, 0.115);
+    }
+
+    /* ── ЗАДНЯЯ ЦАПФА PQ35 ──
+     Сзади нет ни стойки, ни шаровой опоры: цапфа держит пять рычагов через
+     проушины с сайлентблоками и вилку нижней опоры амортизатора. Точки —
+     из CHASSIS.rearCarrier, то есть ровно те, по которым решается
+     кинематика, поэтому звено физически не может уйти «в воздух». */
+    if (!isFront) {
+      const RC = CHASSIS.rearCarrier;
+      const _cA = new THREE.Vector3();
+      const _cDir = new THREE.Vector3();
+      const _cUp = new THREE.Vector3(0, 1, 0);
+      const at = (loc) => new THREE.Vector3(sign * loc[0], loc[1], loc[2]);
+
+      /* Ребро литья между двумя точками цапфы */
+      const web = (from, to, w, d) => {
+        _cA.subVectors(to, from);
+        const len = Math.max(0.02, _cA.length());
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, len, d), CI);
+        m.position.copy(from).addScaledVector(_cA, 0.5);
+        m.quaternion.setFromUnitVectors(_cUp, _cDir.copy(_cA).normalize());
+        m.castShadow = true;
+        knuckleGroup.add(m);
+      };
+
+      /* Проушина шарнира: стальная обойма, резиновая втулка, болт насквозь */
+      const jointEar = (pt, axis, rOut, width) => {
+        const boss = new THREE.Mesh(
+          new THREE.CylinderGeometry(rOut, rOut, width, SEG(18, 12)),
+          materials.ballJointSteel,
+        );
+        const sleeve = new THREE.Mesh(
+          new THREE.CylinderGeometry(
+            rOut * 0.58,
+            rOut * 0.58,
+            width * 1.18,
+            SEG(14, 9),
+          ),
+          materials.bushingRubber,
+        );
+        const bolt = createHexBoltMesh(rOut * 0.33, width * 1.7);
+        if (axis === "z") {
+          boss.rotation.x = Math.PI / 2;
+          sleeve.rotation.x = Math.PI / 2;
+        } else if (axis === "x") {
+          boss.rotation.z = Math.PI / 2;
+          sleeve.rotation.z = Math.PI / 2;
+          bolt.rotation.y = Math.PI / 2;
+        } else {
+          bolt.rotation.x = Math.PI / 2;
+        }
+        put(boss, pt.x, pt.y, pt.z);
+        put(sleeve, pt.x, pt.y, pt.z, false);
+        put(bolt, pt.x, pt.y, pt.z, false);
+      };
+
+      const upEar = at(RC.upOut);
+      const splEar = at(RC.splOut);
+      const camEar = at(RC.camOut);
+      const toeEar = at(RC.toeOut);
+      const trEar = at(RC.trOut);
+      const dmpEar = at(RC.dmpBot);
+      const core = new THREE.Vector3(-sign * 0.085, -0.01, 0.01);
+
+      /* Стенка от верхней проушины к нижней плюс рога к остальным точкам */
+      web(upEar, splEar, 0.05, 0.07);
+      web(core, camEar, 0.042, 0.05);
+      web(core, toeEar, 0.038, 0.046);
+      web(core, trEar, 0.05, 0.058);
+      web(core, dmpEar, 0.036, 0.042);
+
+      jointEar(upEar, "z", 0.026, 0.05);
+      jointEar(splEar, "z", 0.03, 0.058);
+      jointEar(camEar, "z", 0.024, 0.05);
+      jointEar(toeEar, "y", 0.022, 0.046);
+      jointEar(trEar, "x", 0.032, 0.064);
+
+      /* Вилка нижней опоры амортизатора: две пластины и поперечный болт */
+      [-0.032, 0.032].forEach((fx) => {
+        const plate = new THREE.Mesh(
+          new THREE.BoxGeometry(0.011, 0.074, 0.05),
+          materials.bracket,
+        );
+        put(plate, dmpEar.x + fx, dmpEar.y, dmpEar.z);
+      });
+
+      const dmpBolt = createHexBoltMesh(0.011, 0.086);
+      dmpBolt.rotation.y = Math.PI / 2;
+      put(dmpBolt, dmpEar.x, dmpEar.y, dmpEar.z, false);
     }
 
     /* Уши крепления суппорта — по касательной к диску */

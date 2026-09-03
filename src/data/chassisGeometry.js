@@ -13,6 +13,19 @@ const rearBodyHardpoints = Object.freeze({
   damperTop: point(0.63, 0.78, 0.11),
 });
 
+/* Точки крепления рычагов на ЗАДНЕЙ ЦАПФЕ: локальные смещения от центра
+ колеса (x — внутрь машины, y — вверх, z — назад). По ним считается
+ кинематика многорычажки и по ним же строятся проушины литья, поэтому
+ рычаг не может прийти в пустоту рядом со ступицей. */
+const rearCarrierPoints = Object.freeze({
+  upOut: Object.freeze([-0.08, 0.09, -0.05]),
+  splOut: Object.freeze([-0.09, -0.11, 0.02]),
+  camOut: Object.freeze([-0.08, -0.06, 0.14]),
+  toeOut: Object.freeze([-0.12, 0.01, 0.21]),
+  trOut: Object.freeze([-0.05, -0.04, -0.17]),
+  dmpBot: Object.freeze([-0.035, -0.05, 0.11]),
+});
+
 export const CHASSIS_GEOMETRY = Object.freeze({
   frontAxleZ: -1.3,
   rearAxleZ: 1.3,
@@ -36,6 +49,7 @@ export const CHASSIS_GEOMETRY = Object.freeze({
     ]),
   }),
   rearBody: rearBodyHardpoints,
+  rearCarrier: rearCarrierPoints,
 });
 
 export function mirrorHardpoint(pointValue, sign, origin = {}) {

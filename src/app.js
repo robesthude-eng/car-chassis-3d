@@ -1311,6 +1311,37 @@ async function bootstrapScene() {
     telemetryPanel.setAttribute("aria-hidden", String(!isOpen));
   });
 
+  /* ─── СВОРАЧИВАНИЕ НИЖНЕГО ДОКА ───
+   Панель управления занимает до половины экрана телефона, а под ней как раз
+   низ подвески. Кнопка-язычок убирает всё содержимое, оставляя сцену. */
+  const bottomDock = document.querySelector(".bottom-dock");
+  const dockBody = document.getElementById("dock-body");
+  const btnDockToggle = document.getElementById("btn-dock-toggle");
+  const dockToggleText = btnDockToggle
+    ? btnDockToggle.querySelector(".dock-toggle-text")
+    : null;
+
+  function setDockCollapsed(collapsed) {
+    if (!bottomDock || !btnDockToggle) return;
+    bottomDock.classList.toggle("collapsed", collapsed);
+    btnDockToggle.setAttribute("aria-expanded", String(!collapsed));
+    btnDockToggle.setAttribute(
+      "aria-label",
+      collapsed ? "Раскрыть нижнюю панель" : "Свернуть нижнюю панель",
+    );
+    btnDockToggle.title = collapsed ? "Раскрыть панель" : "Свернуть панель";
+    if (dockToggleText)
+      dockToggleText.textContent = collapsed ? "Панель" : "Свернуть";
+    if (dockBody) dockBody.setAttribute("aria-hidden", String(collapsed));
+  }
+
+  if (btnDockToggle && bottomDock) {
+    btnDockToggle.addEventListener("click", () => {
+      triggerHaptic(12);
+      setDockCollapsed(!bottomDock.classList.contains("collapsed"));
+    });
+  }
+
   /* ─── ПОРЯДОК СБОРКИ И МОМЕНТЫ ЗАТЯЖКИ ───
    Порядок шагов и моменты — справочные, типовые для платформы PQ35 (Golf V / Scirocco).
    Перед реальной работой сверяться с ELSA/ETKA под конкретный VIN. */

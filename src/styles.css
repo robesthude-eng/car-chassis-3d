@@ -509,6 +509,61 @@ canvas {
   -webkit-backdrop-filter: blur(18px);
 }
 
+/* Нижний док сворачивается: на телефоне он закрывает как раз низ подвески */
+.dock-toggle {
+  min-height: 30px;
+  margin-inline: auto;
+  padding: 4px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.dock-toggle:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dock-grip {
+  width: 26px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.dock-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 0;
+}
+
+.bottom-dock.collapsed {
+  max-height: none;
+  overflow: visible;
+  background: linear-gradient(
+    0deg,
+    rgba(7, 9, 14, 0.94),
+    rgba(7, 9, 14, 0.5)
+  );
+}
+
+.bottom-dock.collapsed .dock-body {
+  display: none;
+}
+
 .mode-tabs {
   width: max-content;
   max-width: 100%;

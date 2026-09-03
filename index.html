@@ -473,6 +473,20 @@
 
     <!-- Bottom Control Dock -->
     <footer class="hud bottom-dock" aria-label="Управление стендом">
+      <button
+        type="button"
+        class="dock-toggle"
+        id="btn-dock-toggle"
+        title="Свернуть панель"
+        aria-label="Свернуть нижнюю панель"
+        aria-expanded="true"
+        aria-controls="dock-body"
+      >
+        <span class="dock-grip" aria-hidden="true"></span>
+        <span class="dock-toggle-text">Свернуть</span>
+      </button>
+
+      <div class="dock-body" id="dock-body">
       <div class="mode-tabs" role="tablist" aria-label="Режим стенда">
         <button
           type="button"
@@ -864,6 +878,7 @@
             Сброс
           </button>
         </div>
+      </div>
       </div>
     </footer>
 
