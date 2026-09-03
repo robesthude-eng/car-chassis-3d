@@ -39,25 +39,27 @@ npm run build:standalone
 ## Структура
 
 ```text
-index.html                      семантическая разметка интерфейса
-src/app.js                      3D-сцена, кинематика и связывание интерфейса
-src/audio/ChassisAudioEngine.js звуковой движок
-src/data/boltSpecs.js           регламент сборки и моменты затяжки
-src/data/chassisGeometry.js     единые точки кузова, подрамников и подвески
-src/geometry/CoilSpringMesh.js  витая пружина: перестроение буферов вместо scale.y
-src/geometry/FrameRail.js       цельный выдавленный лонжерон рамы
-src/geometry/railProfile.js     профиль и высота лонжерона по длине машины
-src/geometry/springMath.js      математика навивки, шага и смыкания витков
-src/geometry/telescopicMath.js  вылет штока, заделка в корпусе, отбойник и пыльник
-src/report.js                   диагностический отчёт
-src/styles.css                  адаптивный интерфейс
-scripts/check-project.mjs       проверка связей HTML и JavaScript
-scripts/build-standalone.mjs    автономная одностраничная сборка
-tests/chassisGeometry.test.js   тесты совпадения силовых точек
-tests/railProfile.test.js       тесты профиля лонжерона
-tests/springMath.test.js        тесты геометрии пружин
-tests/telescopicMath.test.js    тесты геометрии амортизаторов
-tests/report.test.js            тесты отчёта
+index.html                         семантическая разметка интерфейса
+src/app.js                         сцена, цикл симуляции и связывание UI
+src/boot.js                        экран загрузки
+src/utils.js                       haptic, toast, clamp
+src/textures.js                    процедурные PBR-карты
+src/materials.js                   заводские отделки
+src/geometry/vehicle.js            сборка 3D-узлов шасси
+src/kinematics/hardpoints.js       точки крепления PQ35
+src/kinematics/rear.js             решатель задней многорычажки
+src/kinematics/engine.js           ход, крен, клевок, привод
+src/data/physics.js                массы, пружины, шины
+src/data/boltSpecs.js              регламент сборки и моменты затяжки
+src/data/chassisGeometry.js        единые точки кузова и подрамников
+src/audio/ChassisAudioEngine.js    звуковой движок
+src/report.js                      диагностический отчёт
+src/styles.css                     адаптивный интерфейс
+scripts/check-project.mjs          проверка связей HTML и JavaScript
+scripts/build-standalone.mjs       автономная одностраничная сборка
+tests/chassisGeometry.test.js      тесты силовых точек
+tests/rearKinematics.test.js       тесты длин рычагов многорычажки
+tests/report.test.js               тесты отчёта
 ```
 
 `car_chassis_3d.html` оставлен как лёгкий переход на основной вход для совместимости со старой ссылкой. Вторая копия всего приложения больше не хранится.

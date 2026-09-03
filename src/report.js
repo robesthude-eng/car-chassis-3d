@@ -36,7 +36,7 @@ export function buildDiagnosticReport({
     generatedAt: generatedAt.toISOString(),
     application: {
       name: "3D Шасси VW Scirocco",
-      version: "2.0.0",
+      version: "2.2.0",
     },
     vehicle: {
       model: "Volkswagen Scirocco III",

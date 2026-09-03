@@ -4,10 +4,23 @@ import process from "node:process";
 
 const root = process.cwd();
 const indexPath = path.join(root, "index.html");
-const appPath = path.join(root, "src", "app.js");
+const srcDir = path.join(root, "src");
 const html = fs.readFileSync(indexPath, "utf8");
-const app = fs.readFileSync(appPath, "utf8");
 const errors = [];
+
+function collectJsFiles(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...collectJsFiles(full));
+    else if (entry.name.endsWith(".js")) files.push(full);
+  }
+  return files;
+}
+
+const jsFiles = collectJsFiles(srcDir);
+const app = jsFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
 const duplicateIds = [
@@ -71,5 +84,5 @@ if (errors.length) {
 }
 
 console.log(
-  `Проверено: ${ids.length} DOM id, ${referencedIds.length} связей интерфейса, дубликатов нет.`,
+  `Проверено: ${ids.length} DOM id, ${referencedIds.length} связей интерфейса, ${jsFiles.length} JS-модулей, дубликатов нет.`,
 );
